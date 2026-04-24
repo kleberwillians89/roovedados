@@ -1,9 +1,11 @@
 .onboardingPage {
   min-height: 100vh;
   min-height: 100dvh;
+  min-height: 100svh;
   height: 100%;
   overflow: auto;
   overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
   background:
     radial-gradient(900px 380px at 8% -10%, rgba(199, 152, 48, 0.24), transparent 62%),
     radial-gradient(780px 320px at 98% -15%, rgba(12, 65, 96, 0.2), transparent 58%),
@@ -159,6 +161,18 @@
 }
 
 @media (max-width: 960px) {
+  .onboardingTop{
+    padding: 14px 16px;
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .onboardingHeaderActions,
+  .onboardingHeroActions{
+    width: 100%;
+    justify-content: flex-start;
+  }
+
   .onboardingHero {
     flex-direction: column;
     align-items: flex-start;
@@ -171,5 +185,19 @@
   .onboardingAssets,
   .onboardingConnections {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .onboardingWrap{
+    padding: 0 16px 22px;
+  }
+
+  .onboardingHero{
+    padding: 16px;
+  }
+
+  .onboardingHero h1{
+    font-size: 22px;
   }
 }

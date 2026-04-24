@@ -1,6 +1,6 @@
 .googleReportPage{
   display: grid;
-  gap: 32px;
+  gap: clamp(20px, 3vw, 32px);
   min-height: 100%;
   align-content: start;
   padding-bottom: 8px;
@@ -433,9 +433,46 @@
 }
 
 @media (max-width: 720px){
+  .googleHeroCopy,
+  .googleFilterCard,
+  .googleKpiCard,
+  .googleChartCard,
+  .googleListCard,
+  .googleFeedbackCard,
+  .googleEmptyCard{
+    border-radius: 20px;
+  }
+
+  .googleHeroCopy,
+  .googleFilterCard,
+  .googleChartCard,
+  .googleListCard,
+  .googleFeedbackCard,
+  .googleEmptyCard{
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
   .googleKpiGrid,
   .googleSkeletonGrid{
     grid-template-columns: 1fr;
+  }
+
+  .googlePageTitle{
+    font-size: clamp(1.9rem, 9vw, 2.7rem);
+  }
+
+  .googlePageSubtitle,
+  .googleChartDescription{
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  .googleHeroMeta,
+  .googleQuickNav,
+  .googleShellActions{
+    width: 100%;
+    justify-content: flex-start;
   }
 
   .googleChartCardHead{
@@ -445,5 +482,35 @@
   .googleShellActions{
     width: 100%;
     justify-content: flex-start;
+  }
+
+  .googleListRow{
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .googleListMetric{
+    justify-items: start;
+    text-align: left;
+  }
+}
+
+@media (max-width: 540px){
+  .googleHero{
+    gap: 14px;
+  }
+
+  .googleHeroCopy{
+    min-height: 0;
+    padding: 18px 16px;
+  }
+
+  .googleFilterCard{
+    min-height: 0;
+    padding: 16px;
+  }
+
+  .googleChartViewport{
+    height: 210px;
   }
 }

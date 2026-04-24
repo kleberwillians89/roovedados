@@ -20,8 +20,8 @@
   --shadow2: 0 12px 34px rgba(10,13,16,.10);
 
   --container: 1600px;
-  --shell-padding-x: 22px;
-  --shell-padding-y: 18px;
+  --shell-padding-x: clamp(14px, 1.9vw, 22px);
+  --shell-padding-y: clamp(14px, 1.8vw, 18px);
   --sticky-gap: 10px;
 }
 
@@ -135,23 +135,25 @@ button, input, select { font: inherit; }
 /* ====== LAYOUT ====== */
 .appShell{
   min-height: 100vh;
-  height: 100dvh;
+  min-height: 100dvh;
+  min-height: 100svh;
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  overflow: visible;
 }
 .content{
   flex: 1 1 auto;
-  min-height: 0;
+  min-height: auto;
   width: 100%;
   display: flex;
   flex-direction: column;
   max-width: var(--container);
   margin: 0 auto;
   padding: var(--shell-padding-y) var(--shell-padding-x) 26px;
-  overflow: auto;
-  overscroll-behavior: contain;
-  scrollbar-gutter: stable both-edges;
+  overflow: visible;
+  overscroll-behavior: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-gutter: auto;
   scroll-padding-top: 18px;
 }
 .content > *{
@@ -410,6 +412,16 @@ button, input, select { font: inherit; }
   .pill{
     white-space: normal;
     line-height: 1.2;
+  }
+
+  .monthControls,
+  .panelRowRight{
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .monthStatusText{
+    width: 100%;
   }
 }
 
@@ -947,6 +959,7 @@ button, input, select { font: inherit; }
   max-height: min(48vh, 440px);
   overscroll-behavior: contain;
   scrollbar-gutter: stable both-edges;
+  -webkit-overflow-scrolling: touch;
   border: 1px solid rgba(12,65,96,.08);
   border-radius: 16px;
   background: rgba(255,255,255,.96);
@@ -1393,6 +1406,7 @@ button, input, select { font: inherit; }
   gap: 8px;
   overscroll-behavior: contain;
   scrollbar-gutter: stable both-edges;
+  -webkit-overflow-scrolling: touch;
 }
 .commentItem{
   border: 1px solid rgba(0,0,0,.08);
@@ -1456,6 +1470,10 @@ button, input, select { font: inherit; }
   .content{
     padding: 16px 14px 22px;
   }
+  .appShell{
+    min-height: 100dvh;
+    min-height: 100svh;
+  }
   .layout{
     overflow: visible;
     height: auto;
@@ -1469,5 +1487,120 @@ button, input, select { font: inherit; }
   }
   .cardWide .tableWrap{
     max-height: none;
+  }
+  .commentsList{
+    max-height: none;
+  }
+  .chartMetaSummary{
+    max-width: 100%;
+    text-align: left;
+  }
+  .panelActionsRow{
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 720px){
+  .topbar{
+    position: sticky;
+    top: 0;
+  }
+  .topbarInner{
+    padding: 10px 14px;
+  }
+  .topbarRight{
+    justify-content: stretch;
+  }
+  .topbarRight > *{
+    width: 100%;
+  }
+  .brand{
+    width: 100%;
+  }
+  .panelHead,
+  .sectionHeader,
+  .ga4JourneyHead,
+  .metaStateHead{
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .monthTabs{
+    width: 100%;
+    max-width: 100%;
+  }
+  .select,
+  .selectYear{
+    width: 100%;
+    min-width: 0;
+  }
+  .quickAnswerGrid{
+    grid-template-columns: 1fr;
+  }
+  .card,
+  .cardWide,
+  .sidebarCard{
+    padding: 14px;
+  }
+  .cardWide .tableScroller{
+    min-width: 720px;
+  }
+  .cellClamp{
+    max-width: 220px;
+  }
+  .chartSinglePointRow{
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 560px){
+  .content{
+    padding: 14px 12px 20px;
+  }
+  .panelTitle{
+    font-size: 24px;
+  }
+  .panelSub,
+  .p,
+  .cardSub,
+  .cardHint{
+    font-size: 12px;
+    line-height: 1.5;
+  }
+  .panelRow{
+    padding: 10px;
+  }
+  .metricSelectorRow,
+  .chartCardBadges,
+  .dashboardSectionMeta{
+    width: 100%;
+    justify-content: flex-start;
+  }
+  .metricSelectBtn{
+    width: 100%;
+  }
+  .cardChart{
+    height: 240px;
+    min-height: 220px;
+  }
+  .chartCardPrimary .cardChart{
+    height: 250px;
+    min-height: 230px;
+  }
+  .chartCardSecondary .cardChart{
+    height: 220px;
+    min-height: 200px;
+  }
+  .cardWide .tableScroller{
+    min-width: 640px;
+  }
+  .table thead th,
+  .table tbody td,
+  .mediaTable thead th,
+  .mediaTable tbody td{
+    padding: 10px 8px;
+  }
+  .cellClamp{
+    max-width: 180px;
   }
 }

@@ -1,9 +1,10 @@
 .shopifyReportPage{
   display: grid;
-  gap: 32px;
+  gap: clamp(20px, 3vw, 32px);
   min-height: 100%;
   align-content: start;
   padding-bottom: 8px;
+  overflow-x: clip;
 }
 
 .shopifyHero{
@@ -301,6 +302,7 @@
   max-height: min(52vh, 480px);
   overscroll-behavior: contain;
   scrollbar-gutter: stable both-edges;
+  -webkit-overflow-scrolling: touch;
   transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
   border-radius: 22px;
   border: 1px solid rgba(26,23,24,.08);
@@ -771,5 +773,49 @@
   .shopifySectionAction{
     width: 100%;
     justify-content: flex-start;
+  }
+
+  .shopifyHero{
+    gap: 14px;
+  }
+
+  .shopifyHeroCopy,
+  .shopifyFilterCard,
+  .shopifyKpiCard,
+  .shopifyChartCard,
+  .shopifyListCard,
+  .shopifyTechnicalCard,
+  .shopifyFeedbackCard,
+  .shopifyEmptyCard,
+  .shopifyTableWrap,
+  .shopifyExecutiveCard,
+  .shopifyFilterPanel{
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .shopifyHeroCopy,
+  .shopifyFilterCard{
+    min-height: 0;
+  }
+
+  .shopifyPageTitle{
+    font-size: clamp(1.9rem, 9vw, 2.7rem);
+  }
+
+  .shopifyPageSubtitle,
+  .shopifySectionDescription,
+  .shopifyChartDescription{
+    font-size: 14px;
+    line-height: 1.6;
+  }
+
+  .shopifyChartViewport{
+    height: 210px;
+  }
+
+  .shopifyTable thead th,
+  .shopifyTable tbody td{
+    padding: 14px 12px;
   }
 }
