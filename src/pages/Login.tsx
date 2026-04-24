@@ -1,16 +1,14 @@
 import { useEffect, useState, type FormEvent } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { getSupabaseBootstrapError, supabase } from "../app/supabase";
-import {
-  ROOVE_APP_NAME,
-  ROOVE_CLIENT_NAME,
-  ROOVE_PANEL_NAME,
-} from "../app/roove";
 import "../styles/Login.css";
 
-import logo from "../assets/roove-logo.svg";
+import logo from "../assets/mugo-logo.svg";
 
 const AUTH_DEBUG = import.meta.env.DEV && import.meta.env.VITE_AUTH_DEBUG === "true";
+const BRAND_NAME = "Mugô";
+const PRODUCT_NAME = "Mugô Metrics";
+const PANEL_NAME = "Mugô Intelligence Suite";
 
 function maskEmail(value: string | null | undefined): string {
   const email = String(value || "").trim();
@@ -141,7 +139,7 @@ export default function Login({
         userId: data.session?.user?.id || null,
       });
 
-      setInfo("Login realizado com sucesso. Carregando o painel da Roove...");
+      setInfo("Login realizado com sucesso. Carregando o painel da Mugô...");
       await onPasswordLoginSuccess?.(data.session ?? null);
     } catch (error: unknown) {
       const message = withEmailHint(toErrorMessage(error));
@@ -161,46 +159,76 @@ export default function Login({
 
   return (
     <div className="loginPage">
-      <div className="loginCard">
-        <img src={logo} className="loginLogo" alt={ROOVE_CLIENT_NAME} />
+      <div className="loginShell">
+        <section className="loginBrandPanel" aria-label="Apresentacao da marca Mugô">
+          <div className="loginBrandPill">{BRAND_NAME}</div>
+          <div className="loginLogoStage">
+            <img src={logo} className="loginLogo" alt={BRAND_NAME} />
+          </div>
+          <div className="loginBrandCopy">
+            <div className="loginBrandEyebrow">{PANEL_NAME}</div>
+            <h1>{PRODUCT_NAME}</h1>
+            <p className="loginBrandLead">
+              Acesso reservado ao ambiente analitico da Mugô, com leitura consolidada
+              de performance, midia e operacao.
+            </p>
+          </div>
+          <div className="loginBrandChips" aria-hidden="true">
+            <span>Meta</span>
+            <span>Shopify</span>
+            <span>Google / GA4</span>
+          </div>
+        </section>
 
-        <div className="loginEyebrow">{ROOVE_PANEL_NAME}</div>
-        <h1>{ROOVE_APP_NAME}</h1>
-        <p>Acesse o painel exclusivo da Roove com seu usuario criado no Supabase Auth.</p>
+        <div className="loginCard">
+          <div className="loginEyebrow">Area autenticada</div>
+          <h2 className="loginTitle">Entrar no workspace</h2>
+          <p className="loginSubtitle">
+            Use seu acesso provisionado no Supabase Auth para abrir o painel
+            privado da Mugô.
+          </p>
 
-        {visibleError ? <div className="loginError">{visibleError}</div> : null}
-        {info ? <div className="loginInfo">{info}</div> : null}
+          {visibleError ? <div className="loginError">{visibleError}</div> : null}
+          {info ? <div className="loginInfo">{info}</div> : null}
 
-        <form onSubmit={onPasswordLogin}>
-          <input
-            type="email"
-            placeholder="voce@roove.com.br"
-            autoComplete="email"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            disabled={inputDisabled}
-            required
-          />
-          <input
-            type="password"
-            placeholder="Sua senha"
-            autoComplete="current-password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            disabled={inputDisabled}
-            required
-          />
-          <button type="submit" disabled={inputDisabled}>
-            {authUnavailable
-              ? "Configuração pendente"
-              : passwordLoading || authChecking
-                ? "Entrando..."
-                : "Entrar no painel"}
-          </button>
-        </form>
+          <form onSubmit={onPasswordLogin}>
+            <label className="loginField">
+              <span className="loginFieldLabel">E-mail</span>
+              <input
+                type="email"
+                placeholder="voce@mugo.com.br"
+                autoComplete="email"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                disabled={inputDisabled}
+                required
+              />
+            </label>
+            <label className="loginField">
+              <span className="loginFieldLabel">Senha</span>
+              <input
+                type="password"
+                placeholder="Sua senha"
+                autoComplete="current-password"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                disabled={inputDisabled}
+                required
+              />
+            </label>
+            <button type="submit" disabled={inputDisabled}>
+              {authUnavailable
+                ? "Configuracao pendente"
+                : passwordLoading || authChecking
+                  ? "Entrando..."
+                  : "Entrar no painel"}
+            </button>
+          </form>
 
-        <div className="loginHint">
-          Usuarios e senhas devem ser provisionados no Supabase Auth antes do primeiro acesso.
+          <div className="loginHint">
+            Usuarios e senhas precisam ser provisionados no Supabase Auth antes do
+            primeiro acesso.
+          </div>
         </div>
       </div>
     </div>
