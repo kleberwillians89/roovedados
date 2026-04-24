@@ -61,8 +61,8 @@
   justify-content: center;
   width: fit-content;
   max-width: 100%;
-  margin-bottom: 42px;
-  padding: 12px;
+  margin-bottom: 26px;
+  padding: 10px;
   background: #ffffff;
   border: 1px solid rgba(12, 65, 96, 0.08);
   border-radius: 28px;
@@ -72,7 +72,7 @@
 
 .loginTopLogo {
   display: block;
-  width: 300px;
+  width: 360px;
   max-width: 100%;
   height: auto;
   border-radius: 20px;
@@ -80,54 +80,29 @@
   background: transparent;
 }
 
+.loginBrandPanel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  padding: 44px 52px 36px;
+  background:
+    radial-gradient(700px 320px at 0% 0%, rgba(199, 152, 48, 0.08), transparent 50%),
+    linear-gradient(180deg, #ffffff 0%, #f7f4ef 52%, #f1ece5 100%);
+  color: var(--mugo-text);
+  overflow: hidden;
+}
+
 .loginBrandCopy {
   max-width: 600px;
-}
-.loginBrandEyebrow {
-  margin: 0 0 14px;
-  font-size: 14px;
-  font-weight: 800;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--mugo-red);
-}
-
-.loginBrandCopy h1 {
-  margin: 0 0 18px;
-  font-size: clamp(52px, 5vw, 74px);
-  line-height: 0.95;
-  font-weight: 800;
-  letter-spacing: -0.04em;
-  color: var(--mugo-red);
-}
-
-.loginBrandLead {
-  margin: 0;
-  max-width: 560px;
-  font-size: 18px;
-  line-height: 1.58;
-  color: #5f574f;
+  margin-top: 4px;
 }
 
 .loginBrandTags {
   display: flex;
   gap: 14px;
   flex-wrap: wrap;
-  margin-top: 40px;
-}
-
-.loginBrandTags span {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 14px 18px;
-  border-radius: 999px;
-  border: 1px solid rgba(180, 67, 54, 0.16);
-  background: rgba(180, 67, 54, 0.04);
-  color: var(--mugo-red);
-  font-size: 14px;
-  font-weight: 800;
-  letter-spacing: 0.06em;
+  margin-top: 28px;
 }
 
 /* LADO DIREITO */
