@@ -195,7 +195,7 @@ export default function Login({
 
         <section className="loginCard">
           <div className="loginCardInner">
-            <div className="loginEyebrow">Area autenticada</div>
+            
             <h2 className="loginTitle">Entrar no workspace</h2>
             <p className="loginSubtitle">
               Use seu acesso enviado pela Mugô para abrir o painel privado.
