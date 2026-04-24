@@ -166,11 +166,11 @@ export default function App() {
 
         if (!hasActiveOrganicConnection) {
           authDebug("route.decision", {
-            target: "setup",
-            reason: "missing_active_roove_connection",
+            target: "dashboard",
+            reason: "authenticated_without_active_roove_connection",
             connectionsCount: connections.length,
           });
-          setView("setup");
+          setView("dashboard");
           return;
         }
 
@@ -183,12 +183,12 @@ export default function App() {
       } catch (error: unknown) {
         const message = toErrorMessage(error);
         authDebug("route.decision", {
-          target: "setup",
+          target: "dashboard",
           reason: "resolve_authenticated_view_error",
           error: message,
         });
         setBootError(message);
-        setView("setup");
+        setView("dashboard");
       }
     },
     [isOrganicConnection, route, session]
