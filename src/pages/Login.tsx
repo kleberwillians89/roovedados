@@ -3,10 +3,10 @@ import type { Session } from "@supabase/supabase-js";
 import { getSupabaseBootstrapError, supabase } from "../app/supabase";
 import "../styles/Login.css";
 
-import logo from "../assets/MUGÔ_LOGO.png";
+import logoVideo from "../assets/MUGÔ_LOGO.mp4";
 
 const AUTH_DEBUG = import.meta.env.DEV && import.meta.env.VITE_AUTH_DEBUG === "true";
-const BRAND_NAME = "Mugô";
+
 const PRODUCT_NAME = "Mugô Metrics";
 const PANEL_NAME = "Mugô Intelligence Suite";
 
@@ -83,6 +83,7 @@ export default function Login({
 
     const cleanEmail = email.trim();
     const cleanPassword = password.trim();
+
     if (!cleanEmail || !cleanPassword) {
       setErr("Informe e-mail e senha para continuar.");
       return;
@@ -125,6 +126,7 @@ export default function Login({
         email: cleanEmail,
         password: cleanPassword,
       });
+
       if (error) {
         authLoginDebug("sign_in.error", {
           email: maskEmail(cleanEmail),
@@ -161,10 +163,20 @@ export default function Login({
     <div className="loginPage">
       <div className="loginShell">
         <section className="loginBrandPanel" aria-label="Apresentacao da marca Mugô">
-          <div className="loginBrandPill">{BRAND_NAME}</div>
           <div className="loginBrandTopLogo">
-            <img src={logo} className="loginTopLogo" alt={BRAND_NAME} />
+            <video
+              className="loginTopLogo"
+              autoPlay
+              muted
+              loop
+              playsInline
+              preload="auto"
+            >
+              <source src={logoVideo} type="video/mp4" />
+              Seu navegador nao suporta video.
+            </video>
           </div>
+
           <div className="loginBrandCopy">
             <div className="loginBrandEyebrow">{PANEL_NAME}</div>
             <h1>{PRODUCT_NAME}</h1>
@@ -173,6 +185,7 @@ export default function Login({
               de performance, midia e operacao.
             </p>
           </div>
+
           <div className="loginBrandChips" aria-hidden="true">
             <span>Meta</span>
             <span>Shopify</span>
@@ -183,8 +196,7 @@ export default function Login({
         <div className="loginCard">
           <h2 className="loginTitle">Entrar no workspace</h2>
           <p className="loginSubtitle">
-            Use seu acesso enviado pela Mugô para abrir o painel
-            privado da Mugô.
+            Use seu acesso enviado pela Mugô para abrir o painel privado.
           </p>
 
           {visibleError ? <div className="loginError">{visibleError}</div> : null}
@@ -203,6 +215,7 @@ export default function Login({
                 required
               />
             </label>
+
             <label className="loginField">
               <span className="loginFieldLabel">Senha</span>
               <input
@@ -215,6 +228,7 @@ export default function Login({
                 required
               />
             </label>
+
             <button type="submit" disabled={inputDisabled}>
               {authUnavailable
                 ? "Configuracao pendente"

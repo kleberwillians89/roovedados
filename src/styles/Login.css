@@ -9,9 +9,9 @@
   overflow: auto;
   overscroll-behavior: contain;
   background:
-    radial-gradient(900px 420px at 4% -8%, rgba(201, 160, 75, 0.34), transparent 62%),
-    radial-gradient(840px 440px at 100% 0%, rgba(16, 91, 105, 0.28), transparent 54%),
-    linear-gradient(140deg, #f6f1e6 0%, #efe2c3 42%, #d2bf98 100%);
+    radial-gradient(900px 420px at 8% -10%, rgba(255, 244, 214, 0.28), transparent 60%),
+    radial-gradient(820px 400px at 100% 0%, rgba(110, 74, 10, 0.16), transparent 52%),
+    linear-gradient(145deg, #efd392 0%, #c79830 45%, #8f6611 100%);
   font-family: "Manrope", "Segoe UI", sans-serif;
 }
 
