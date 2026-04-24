@@ -4,6 +4,8 @@ import os
 
 import uvicorn
 
+from app import app
+
 
 def _resolve_port() -> int:
     raw = str(os.getenv("PORT") or "").strip()
@@ -16,7 +18,7 @@ def _resolve_port() -> int:
 
 def main() -> None:
     uvicorn.run(
-        "app:app",
+        app,
         host="0.0.0.0",
         port=_resolve_port(),
         reload=False,
