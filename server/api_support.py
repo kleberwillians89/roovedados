@@ -130,6 +130,26 @@ def _structured_error_response(
     )
 
 
+def _runtime_error_status(exc: Exception, *, default_status: int = 400) -> int:
+    message = _clean(str(exc)).lower()
+    config_signals = (
+        "não configurado",
+        "nao configurado",
+        "configure ",
+        "inválida",
+        "invalida",
+        "missing environment variable",
+        "invalid environment variable",
+        "credenciais do ga4",
+        "google_application_credentials",
+        "ga4_credentials_path",
+        "ambiente local/dev",
+    )
+    if any(signal in message for signal in config_signals):
+        return 500
+    return default_status
+
+
 def _started() -> float:
     return time.perf_counter()
 

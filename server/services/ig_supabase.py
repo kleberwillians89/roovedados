@@ -15,9 +15,9 @@ def _assert_env() -> None:
     key = _env("SUPABASE_SERVICE_ROLE_KEY")
 
     if not url.startswith("http://") and not url.startswith("https://"):
-        raise RuntimeError("SUPABASE_URL inválida (precisa começar com http/https)")
+        raise RuntimeError("Missing or invalid environment variable: SUPABASE_URL.")
     if len(key) < 20:
-        raise RuntimeError("SUPABASE_SERVICE_ROLE_KEY inválida (curta demais)")
+        raise RuntimeError("Missing or invalid environment variable: SUPABASE_SERVICE_ROLE_KEY.")
 
 
 def _headers() -> Dict[str, str]:

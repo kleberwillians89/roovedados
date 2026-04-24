@@ -7,6 +7,7 @@ from api_support import (
     _log_endpoint_call,
     _log_endpoint_done,
     _log_endpoint_error,
+    _runtime_error_status,
     _started,
     _structured_error_response,
 )
@@ -100,7 +101,7 @@ async def ga4_sync(
         return _structured_error_response(
             endpoint=endpoint,
             exc=exc,
-            status_code=400,
+            status_code=_runtime_error_status(exc),
             code="ga4_sync_runtime_error",
         )
     except Exception as exc:
@@ -179,7 +180,7 @@ async def ga4_report(
         return _structured_error_response(
             endpoint=endpoint,
             exc=exc,
-            status_code=400,
+            status_code=_runtime_error_status(exc),
             code="ga4_report_runtime_error",
         )
     except Exception as exc:
@@ -258,7 +259,7 @@ async def ga4_channels(
         return _structured_error_response(
             endpoint=endpoint,
             exc=exc,
-            status_code=400,
+            status_code=_runtime_error_status(exc),
             code="ga4_channels_runtime_error",
         )
     except Exception as exc:
@@ -337,7 +338,7 @@ async def ga4_campaigns(
         return _structured_error_response(
             endpoint=endpoint,
             exc=exc,
-            status_code=400,
+            status_code=_runtime_error_status(exc),
             code="ga4_campaigns_runtime_error",
         )
     except Exception as exc:
@@ -416,7 +417,7 @@ async def ga4_events(
         return _structured_error_response(
             endpoint=endpoint,
             exc=exc,
-            status_code=400,
+            status_code=_runtime_error_status(exc),
             code="ga4_events_runtime_error",
         )
     except Exception as exc:

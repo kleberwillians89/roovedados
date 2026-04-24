@@ -11,6 +11,7 @@ from api_support import (
     _log_endpoint_call,
     _log_endpoint_done,
     _log_endpoint_error,
+    _runtime_error_status,
     _started,
     _structured_error_response,
 )
@@ -299,7 +300,7 @@ async def shopify_report(
         return _structured_error_response(
             endpoint=endpoint,
             exc=exc,
-            status_code=400,
+            status_code=_runtime_error_status(exc),
             code="shopify_report_runtime_error",
         )
     except Exception as exc:
@@ -374,7 +375,7 @@ async def shopify_customers(
         return _structured_error_response(
             endpoint=endpoint,
             exc=exc,
-            status_code=400,
+            status_code=_runtime_error_status(exc),
             code="shopify_customers_runtime_error",
         )
     except Exception as exc:

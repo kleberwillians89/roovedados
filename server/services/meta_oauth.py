@@ -67,7 +67,7 @@ def get_meta_oauth_settings(*, require_redirect_uri: bool = False, debug: bool =
     if missing:
         raise RuntimeError(
             "Configuração OAuth Meta incompleta. "
-            f"Defina no server/.env: {', '.join(missing)}"
+            f"Missing environment variable(s): {', '.join(missing)}"
         )
 
     return {

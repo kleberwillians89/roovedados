@@ -6,9 +6,15 @@ from fastapi import APIRouter, Header, HTTPException, Query, Request
 from fastapi.responses import RedirectResponse
 
 from api_support import (
+    _log_endpoint_call,
+    _log_endpoint_done,
+    _log_endpoint_error,
     _pick_client_id,
     _require_cron_secret,
     _request_origin,
+    _runtime_error_status,
+    _started,
+    _structured_error_response,
     _validated_connection_id,
 )
 from services.clients import connect_meta_for_client, create_client_for_user, list_clients_for_user
@@ -236,9 +242,68 @@ async def api_list_connections(
     client_id: str,
     authorization: str | None = Header(default=None),
 ):
-    cid = await resolve_client_id(client_id, authorization)
-    rows = await list_connections(cid)
-    return {"ok": True, "client_id": cid, "connections": rows}
+    started = _started()
+    endpoint = "/api/clients/{client_id}/connections"
+    user_for_log = await _log_endpoint_call(
+        endpoint=endpoint,
+        authorization=authorization,
+        x_client_id=None,
+        client_id=client_id,
+    )
+    resolved_client_id = (client_id or "").strip() or None
+    try:
+        resolved_client_id = await resolve_client_id(client_id, authorization)
+        rows = await list_connections(resolved_client_id)
+        _log_endpoint_done(
+            endpoint=endpoint,
+            started=started,
+            user_id=user_for_log,
+            x_client_id=None,
+            client_id=resolved_client_id,
+        )
+        return {"ok": True, "client_id": resolved_client_id, "connections": rows}
+    except HTTPException as exc:
+        _log_endpoint_error(
+            endpoint=endpoint,
+            exc=exc,
+            user_id=user_for_log,
+            x_client_id=None,
+            client_id=resolved_client_id,
+        )
+        return _structured_error_response(
+            endpoint=endpoint,
+            exc=exc,
+            status_code=exc.status_code,
+            code="meta_connections_http_error",
+        )
+    except RuntimeError as exc:
+        _log_endpoint_error(
+            endpoint=endpoint,
+            exc=exc,
+            user_id=user_for_log,
+            x_client_id=None,
+            client_id=resolved_client_id,
+        )
+        return _structured_error_response(
+            endpoint=endpoint,
+            exc=exc,
+            status_code=_runtime_error_status(exc),
+            code="meta_connections_runtime_error",
+        )
+    except Exception as exc:
+        _log_endpoint_error(
+            endpoint=endpoint,
+            exc=exc,
+            user_id=user_for_log,
+            x_client_id=None,
+            client_id=resolved_client_id,
+        )
+        return _structured_error_response(
+            endpoint=endpoint,
+            exc=exc,
+            status_code=500,
+            code="meta_connections_unexpected_error",
+        )
 
 
 @router.get("/api/meta/connections/{connection_id}/status")

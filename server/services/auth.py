@@ -67,10 +67,12 @@ async def get_user_id_from_bearer(authorization: Optional[str]) -> Optional[str]
     service_role_key = _env("SUPABASE_SERVICE_ROLE_KEY")
 
     if not supabase_url.startswith("http"):
-        raise RuntimeError("SUPABASE_URL inválida")
+        raise RuntimeError("Missing or invalid environment variable: SUPABASE_URL.")
     keys = [k for k in [anon_key, service_role_key] if len(k) >= 20]
     if not keys:
-        raise RuntimeError("Configure SUPABASE_ANON_KEY ou SUPABASE_SERVICE_ROLE_KEY no server/.env")
+        raise RuntimeError(
+            "Missing environment variable: SUPABASE_ANON_KEY or SUPABASE_SERVICE_ROLE_KEY."
+        )
 
     url = f"{supabase_url}/auth/v1/user"
 

@@ -49,7 +49,14 @@ TTL_STORIES_SECONDS = 90
 TTL_NOTES_SECONDS = 90
 TTL_MEDIA_MONTHLY_SECONDS = 180
 
-raw = os.getenv("ALLOW_ORIGIN", "http://localhost:5173,http://localhost:5174")
+default_allow_origin = ",".join(
+    [
+        "http://localhost:5173",
+        "http://localhost:5174",
+        "https://roovedados.onrender.com",
+    ]
+)
+raw = (os.getenv("ALLOW_ORIGIN") or default_allow_origin).strip()
 allow_origins = [o.strip() for o in raw.split(",") if o.strip()]
 
 app.add_middleware(
