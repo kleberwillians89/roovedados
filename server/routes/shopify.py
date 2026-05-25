@@ -21,6 +21,7 @@ from services.shopify_webhooks import (
     decode_shopify_webhook_payload,
     extract_shopify_order_id,
     get_shopify_client_id,
+    get_shopify_token_debug,
     list_recent_shopify_orders,
     list_recent_shopify_webhooks,
     mark_shopify_webhook_processing,
@@ -44,6 +45,7 @@ SHOPIFY_ENDPOINTS = [
     "POST /api/shopify/sync",
     "GET /api/shopify/report",
     "GET /api/shopify/customers",
+    "GET /api/shopify/debug/token",
     "GET /api/shopify/debug/recent-webhooks",
     "GET /api/shopify/debug/recent-orders",
 ]
@@ -412,6 +414,86 @@ async def shopify_sync(
             exc=exc,
             status_code=500,
             code="shopify_sync_unexpected_error",
+        )
+
+
+@router.get("/api/shopify/debug/token")
+async def shopify_debug_token(
+    client_id: str | None = Query(default=None),
+    x_client_id: str | None = Header(default=None, alias="X-Client-Id"),
+    shop_domain: str | None = Query(default=None),
+    authorization: str | None = Header(default=None),
+):
+    started = _started()
+    endpoint = "/api/shopify/debug/token"
+    user_for_log = await _log_endpoint_call(
+        endpoint=endpoint,
+        authorization=authorization,
+        x_client_id=x_client_id,
+        client_id=client_id,
+    )
+    try:
+        client_id = await resolve_client_id(_pick_client_id(client_id, x_client_id), authorization)
+        payload = await get_shopify_token_debug(shop_domain=shop_domain)
+        print(
+            "[api][shopify_debug_token] "
+            f"route={endpoint} client_id={client_id} shop_domain={payload.get('shop_domain') or '-'} "
+            f"token_env={payload.get('token_env') or '-'} token_prefix={payload.get('token_prefix') or '-'} "
+            f"token_source={payload.get('token_source') or '-'}"
+        )
+        _log_endpoint_done(
+            endpoint=endpoint,
+            started=started,
+            user_id=user_for_log,
+            x_client_id=x_client_id,
+            client_id=client_id,
+        )
+        return {
+            "ok": True,
+            "client_id": client_id,
+            **payload,
+        }
+    except HTTPException as exc:
+        _log_endpoint_error(
+            endpoint=endpoint,
+            exc=exc,
+            user_id=user_for_log,
+            x_client_id=x_client_id,
+            client_id=client_id,
+        )
+        return _structured_error_response(
+            endpoint=endpoint,
+            exc=exc,
+            status_code=exc.status_code,
+            code="shopify_debug_token_http_error",
+        )
+    except RuntimeError as exc:
+        _log_endpoint_error(
+            endpoint=endpoint,
+            exc=exc,
+            user_id=user_for_log,
+            x_client_id=x_client_id,
+            client_id=client_id,
+        )
+        return _structured_error_response(
+            endpoint=endpoint,
+            exc=exc,
+            status_code=_runtime_error_status(exc),
+            code="shopify_debug_token_runtime_error",
+        )
+    except Exception as exc:
+        _log_endpoint_error(
+            endpoint=endpoint,
+            exc=exc,
+            user_id=user_for_log,
+            x_client_id=x_client_id,
+            client_id=client_id,
+        )
+        return _structured_error_response(
+            endpoint=endpoint,
+            exc=exc,
+            status_code=500,
+            code="shopify_debug_token_unexpected_error",
         )
 
 

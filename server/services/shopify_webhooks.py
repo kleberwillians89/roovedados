@@ -27,6 +27,13 @@ SUPPORTED_SHOPIFY_TOPICS = {
     "customers/update",
 }
 
+_SHOPIFY_TOKEN_CACHE: Dict[str, Any] = {
+    "access_token": "",
+    "expires_at": 0.0,
+    "token_env": "",
+    "token_source": "",
+}
+
 
 def _env(name: str) -> str:
     import os
@@ -198,7 +205,11 @@ def _shopify_secret() -> str:
     return secret
 
 
-def _shopify_admin_access_token() -> Tuple[str, str]:
+def _token_prefix(token: str) -> str:
+    return _safe_str(token)[:5]
+
+
+def _shopify_configured_token() -> Tuple[str, str]:
     ensure_env_loaded()
     for env_name in (
         "SHOPIFY_ADMIN_ACCESS_TOKEN",
@@ -209,7 +220,139 @@ def _shopify_admin_access_token() -> Tuple[str, str]:
         token = _env(env_name)
         if token:
             return token, env_name
-    raise RuntimeError("Token Admin da Shopify não configurado.")
+    return "", ""
+
+
+def _shopify_client_id() -> Tuple[str, str]:
+    ensure_env_loaded()
+    for env_name in (
+        "SHOPIFY_CLIENT_ID",
+        "SHOPIFY_ROOVE_CLIENT_ID",
+        "SHOPIFY_API_KEY",
+        "SHOPIFY_ROOVE_API_KEY",
+    ):
+        client_id = _env(env_name)
+        if client_id:
+            return client_id, env_name
+    return "", ""
+
+
+def _shopify_client_secret() -> Tuple[str, str]:
+    ensure_env_loaded()
+    for env_name in (
+        "SHOPIFY_CLIENT_SECRET",
+        "SHOPIFY_ROOVE_CLIENT_SECRET",
+        "SHOPIFY_API_SECRET",
+        "SHOPIFY_ROOVE_API_SECRET",
+        "SHOPIFY_APP_SECRET",
+    ):
+        client_secret = _env(env_name)
+        if client_secret:
+            return client_secret, env_name
+    return "", ""
+
+
+def _is_direct_admin_token(token: str) -> bool:
+    return _safe_str(token).startswith("shpat_")
+
+
+async def _exchange_shopify_client_credentials(shop_domain: str) -> Tuple[str, str]:
+    client_id, client_id_env = _shopify_client_id()
+    client_secret, client_secret_env = _shopify_client_secret()
+    if not client_id or not client_secret:
+        configured_token, configured_token_env = _shopify_configured_token()
+        configured_prefix = _token_prefix(configured_token) or "-"
+        raise RuntimeError(
+            "Token Shopify configurado não é um Admin API token direto. "
+            f"token_env={configured_token_env or '-'} token_prefix={configured_prefix}. "
+            "Configure SHOPIFY_CLIENT_ID e SHOPIFY_CLIENT_SECRET para gerar o access_token via client_credentials."
+        )
+
+    resolved_shop_domain = _normalize_shop_domain(shop_domain)
+    if not resolved_shop_domain:
+        raise RuntimeError("SHOPIFY_ROOVE_SHOP_DOMAIN não configurado.")
+
+    token_url = f"https://{resolved_shop_domain}/admin/oauth/access_token"
+    async with httpx.AsyncClient(timeout=30) as client:
+        response = await client.post(
+            token_url,
+            headers={"Accept": "application/json"},
+            data={
+                "grant_type": "client_credentials",
+                "client_id": client_id,
+                "client_secret": client_secret,
+            },
+        )
+        if response.status_code >= 400:
+            print(
+                "[shopify][token_exchange][http_error] "
+                f"shop_domain={resolved_shop_domain} status={response.status_code} "
+                f"client_id_env={client_id_env} client_secret_env={client_secret_env} "
+                f"body={_clip(response.text, 500) or '-'}"
+            )
+        response.raise_for_status()
+        payload = response.json()
+
+    access_token = _safe_str(payload.get("access_token"))
+    if not access_token:
+        raise RuntimeError("Shopify não retornou access_token no client_credentials.")
+
+    expires_in = _safe_int(payload.get("expires_in"), 3600)
+    _SHOPIFY_TOKEN_CACHE.update(
+        {
+            "access_token": access_token,
+            "expires_at": time.time() + max(60, expires_in),
+            "token_env": f"client_credentials:{client_id_env}+{client_secret_env}",
+            "token_source": "client_credentials",
+        }
+    )
+    return access_token, str(_SHOPIFY_TOKEN_CACHE["token_env"])
+
+
+async def _shopify_admin_access_token(shop_domain: str) -> Tuple[str, str, str]:
+    configured_token, configured_env = _shopify_configured_token()
+    if _is_direct_admin_token(configured_token):
+        return configured_token, configured_env, "direct_env"
+
+    cached_token = _safe_str(_SHOPIFY_TOKEN_CACHE.get("access_token"))
+    cached_expires_at = float(_SHOPIFY_TOKEN_CACHE.get("expires_at") or 0)
+    if cached_token and time.time() < cached_expires_at - 60:
+        return cached_token, _safe_str(_SHOPIFY_TOKEN_CACHE.get("token_env")), "cache"
+
+    access_token, token_env = await _exchange_shopify_client_credentials(shop_domain)
+    return access_token, token_env, "client_credentials"
+
+
+async def get_shopify_token_debug(shop_domain: Optional[str] = None) -> Dict[str, Any]:
+    resolved_shop_domain = _normalize_shop_domain(shop_domain) or get_roove_shopify_domain()
+    configured_token, configured_env = _shopify_configured_token()
+    client_id, client_id_env = _shopify_client_id()
+    _client_secret, client_secret_env = _shopify_client_secret()
+
+    access_token = ""
+    token_env = configured_env
+    token_source = "direct_env" if _is_direct_admin_token(configured_token) else "not_resolved"
+    resolve_error = None
+    try:
+        access_token, token_env, token_source = await _shopify_admin_access_token(resolved_shop_domain)
+    except Exception as exc:
+        resolve_error = f"{exc.__class__.__name__}: {_clip(str(exc), 180)}"
+
+    return {
+        "ok": resolve_error is None,
+        "shop_domain": resolved_shop_domain,
+        "token_env": token_env or configured_env or "-",
+        "token_prefix": _token_prefix(access_token or configured_token) or "-",
+        "token_source": token_source,
+        "configured_token_env": configured_env or "-",
+        "configured_token_prefix": _token_prefix(configured_token) or "-",
+        "configured_token_is_direct_admin_token": _is_direct_admin_token(configured_token),
+        "client_id_env": client_id_env or "-",
+        "client_id_configured": bool(client_id),
+        "client_secret_env": client_secret_env or "-",
+        "client_secret_configured": bool(_client_secret),
+        "resolve_error": resolve_error,
+    }
 
 
 def _shopify_api_version() -> str:
@@ -647,7 +790,6 @@ async def sync_shopify_orders_for_period(
     if not resolved_shop_domain:
         raise RuntimeError("SHOPIFY_ROOVE_SHOP_DOMAIN não configurado.")
 
-    access_token, access_token_env = _shopify_admin_access_token()
     version = _shopify_api_version()
     base_url = f"https://{resolved_shop_domain}/admin/api/{version}/orders.json"
     found_orders = 0
@@ -658,16 +800,17 @@ async def sync_shopify_orders_for_period(
     page_count = 0
     page_info: Optional[str] = None
 
-    headers = {
-        "X-Shopify-Access-Token": access_token,
-        "Accept": "application/json",
-    }
+    access_token, access_token_env, token_source = await _shopify_admin_access_token(resolved_shop_domain)
 
     print(
         "[shopify][sync][token] "
         f"route=/api/shopify/sync client_id={client_id} shop_domain={resolved_shop_domain} "
-        f"token_env={access_token_env} token_prefix={access_token[:5]}"
+        f"token_env={access_token_env} token_prefix={_token_prefix(access_token)} token_source={token_source}"
     )
+    headers = {
+        "X-Shopify-Access-Token": access_token,
+        "Accept": "application/json",
+    }
 
     async with httpx.AsyncClient(timeout=60) as client:
         while True:
