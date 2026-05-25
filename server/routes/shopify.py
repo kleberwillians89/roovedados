@@ -26,6 +26,7 @@ from services.shopify_webhooks import (
     mark_shopify_webhook_processing,
     process_shopify_webhook_event,
     register_shopify_webhook_event,
+    sync_shopify_orders_for_period,
     validate_shopify_hmac,
     validate_shopify_shop_domain,
 )
@@ -40,6 +41,7 @@ router = APIRouter(tags=["shopify"])
 
 SHOPIFY_ENDPOINTS = [
     "POST /api/webhooks/shopify",
+    "POST /api/shopify/sync",
     "GET /api/shopify/report",
     "GET /api/shopify/customers",
     "GET /api/shopify/debug/recent-webhooks",
@@ -314,6 +316,102 @@ async def shopify_report(
             exc=exc,
             status_code=500,
             code="shopify_report_unexpected_error",
+        )
+
+
+@router.post("/api/shopify/sync")
+async def shopify_sync(
+    client_id: str | None = Query(default=None),
+    x_client_id: str | None = Header(default=None, alias="X-Client-Id"),
+    start: str | None = Query(default=None),
+    end: str | None = Query(default=None),
+    days: int = Query(default=30, ge=1, le=366),
+    shop_domain: str | None = Query(default=None),
+    authorization: str | None = Header(default=None),
+):
+    started = _started()
+    endpoint = "/api/shopify/sync"
+    user_for_log = await _log_endpoint_call(
+        endpoint=endpoint,
+        authorization=authorization,
+        x_client_id=x_client_id,
+        client_id=client_id,
+        days=days,
+        start=start,
+        end=end,
+    )
+    try:
+        client_id = await resolve_client_id(_pick_client_id(client_id, x_client_id), authorization)
+        period = resolve_shopify_report_period(start=start, end=end, days=days)
+        print(
+            "[api][shopify_sync] "
+            f"route={endpoint} client_id={client_id} shop_domain={_clean(shop_domain) or '-'} "
+            f"period={period.start.isoformat()}..{period.end.isoformat()}"
+        )
+        payload = await sync_shopify_orders_for_period(
+            client_id=client_id,
+            shop_domain=shop_domain,
+            start=period.start,
+            end=period.end,
+        )
+        _log_endpoint_done(
+            endpoint=endpoint,
+            started=started,
+            user_id=user_for_log,
+            x_client_id=x_client_id,
+            client_id=client_id,
+        )
+        return payload
+    except HTTPException as exc:
+        _log_endpoint_error(
+            endpoint=endpoint,
+            exc=exc,
+            user_id=user_for_log,
+            x_client_id=x_client_id,
+            client_id=client_id,
+            start=start,
+            end=end,
+            days=days,
+        )
+        return _structured_error_response(
+            endpoint=endpoint,
+            exc=exc,
+            status_code=exc.status_code,
+            code="shopify_sync_http_error",
+        )
+    except RuntimeError as exc:
+        _log_endpoint_error(
+            endpoint=endpoint,
+            exc=exc,
+            user_id=user_for_log,
+            x_client_id=x_client_id,
+            client_id=client_id,
+            start=start,
+            end=end,
+            days=days,
+        )
+        return _structured_error_response(
+            endpoint=endpoint,
+            exc=exc,
+            status_code=_runtime_error_status(exc),
+            code="shopify_sync_runtime_error",
+        )
+    except Exception as exc:
+        _log_endpoint_error(
+            endpoint=endpoint,
+            exc=exc,
+            user_id=user_for_log,
+            x_client_id=x_client_id,
+            client_id=client_id,
+            start=start,
+            end=end,
+            days=days,
+        )
+        return _structured_error_response(
+            endpoint=endpoint,
+            exc=exc,
+            status_code=500,
+            code="shopify_sync_unexpected_error",
         )
 
 

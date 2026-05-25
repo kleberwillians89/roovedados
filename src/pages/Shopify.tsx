@@ -10,7 +10,7 @@ import ShopifySectionHeader from "../components/shopify/ShopifySectionHeader";
 import ShopifyTopProductsCard from "../components/shopify/ShopifyTopProductsCard";
 import ShopifyWebhookStatusCard from "../components/shopify/ShopifyWebhookStatusCard";
 import { usePeriod } from "../app/PeriodContext";
-import { getShopifyCustomers, getShopifyReport } from "../app/api";
+import { getShopifyCustomers, getShopifyReport, syncShopify } from "../app/api";
 import { ROOVE_APP_NAME, ROOVE_CLIENT_NAME } from "../app/roove";
 import {
   formatShopifyCompactNumber,
@@ -202,6 +202,35 @@ export default function Shopify({ onLogout, onOpenDashboard, onOpenGoogleReport 
   useEffect(() => {
     void loadCustomers();
   }, [loadCustomers]);
+
+  const handleRefreshShopify = useCallback(async () => {
+    setRefreshing(true);
+    setCustomersRefreshing(true);
+    setError(null);
+    setCustomersError(null);
+
+    try {
+      const currentPeriod = {
+        start: period.start,
+        end: period.end,
+        days: periodDays,
+      };
+      await syncShopify(currentPeriod);
+      await Promise.all([
+        getShopifyReport(currentPeriod).then(setReport),
+        getShopifyCustomers(currentPeriod).then(setCustomerData),
+      ]);
+    } catch (requestError: unknown) {
+      const message = toErrorMessage(requestError);
+      setError(message);
+      setCustomersError(message);
+    } finally {
+      setRefreshing(false);
+      setCustomersRefreshing(false);
+      setLoading(false);
+      setCustomersLoading(false);
+    }
+  }, [period.end, period.start, periodDays]);
 
   const currency = report?.recent_orders[0]?.currency || "BRL";
   const summary = report?.summary;
@@ -456,7 +485,7 @@ export default function Shopify({ onLogout, onOpenDashboard, onOpenGoogleReport 
               className="btn btnPrimary shopifyRefreshButton"
               disabled={refreshing || customersRefreshing}
               onClick={() => {
-                void Promise.all([loadReport("refresh"), loadCustomers("refresh")]);
+                void handleRefreshShopify();
               }}
               type="button"
             >

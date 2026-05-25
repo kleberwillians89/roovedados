@@ -1120,6 +1120,17 @@ export async function getShopifyCustomers(
   return normalizeShopifyCustomers(raw);
 }
 
+export async function syncShopify(
+  period: number | PeriodQueryInput = 30
+): Promise<{ ok: boolean; orders_found?: number; orders_persisted?: number }> {
+  const fallbackDays =
+    typeof period === "number" ? positiveInt(period, 30) : positiveInt(period.days, 30);
+  return http<{ ok: boolean; orders_found?: number; orders_persisted?: number }>(
+    pathWithPeriod("/api/shopify/sync", period, fallbackDays),
+    { method: "POST" }
+  );
+}
+
 export async function getGa4Report(
   period: number | PeriodQueryInput = 30
 ): Promise<Ga4ReportResponse> {

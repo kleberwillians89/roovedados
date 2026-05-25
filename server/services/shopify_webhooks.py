@@ -7,7 +7,8 @@ import json
 import time
 import traceback
 import uuid
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
+from urllib.parse import parse_qs, urlparse
 from typing import Any, Dict, List, Optional, Tuple
 
 import httpx
@@ -195,6 +196,24 @@ def _shopify_secret() -> str:
     if len(secret) < 8:
         raise RuntimeError("SHOPIFY_APP_SECRET não configurado.")
     return secret
+
+
+def _shopify_admin_access_token() -> str:
+    ensure_env_loaded()
+    for env_name in (
+        "SHOPIFY_ADMIN_ACCESS_TOKEN",
+        "SHOPIFY_ROOVE_ADMIN_ACCESS_TOKEN",
+        "SHOPIFY_ACCESS_TOKEN",
+        "SHOPIFY_ROOVE_ACCESS_TOKEN",
+    ):
+        token = _env(env_name)
+        if token:
+            return token
+    raise RuntimeError("Token Admin da Shopify não configurado.")
+
+
+def _shopify_api_version() -> str:
+    return _env("SHOPIFY_API_VERSION") or "2025-04"
 
 
 def get_shopify_client_id() -> str:
@@ -594,6 +613,136 @@ async def _handle_order_topic(
         "order_id": order_id,
         "customer_id": customer_id,
         "items_upserted": items_upserted,
+    }
+
+
+def _next_page_info(link_header: str) -> Optional[str]:
+    for part in str(link_header or "").split(","):
+        if 'rel="next"' not in part:
+            continue
+        start = part.find("<")
+        end = part.find(">", start + 1)
+        if start < 0 or end < 0:
+            continue
+        parsed = urlparse(part[start + 1 : end])
+        page_info = parse_qs(parsed.query).get("page_info", [""])[0]
+        return _safe_str(page_info) or None
+    return None
+
+
+def _shopify_period_timestamp(day: date, *, end_of_day: bool = False) -> str:
+    if end_of_day:
+        return datetime(day.year, day.month, day.day, 23, 59, 59, tzinfo=timezone.utc).isoformat()
+    return datetime(day.year, day.month, day.day, tzinfo=timezone.utc).isoformat()
+
+
+async def sync_shopify_orders_for_period(
+    *,
+    client_id: str,
+    shop_domain: Optional[str],
+    start: date,
+    end: date,
+) -> Dict[str, Any]:
+    resolved_shop_domain = _normalize_shop_domain(shop_domain) or get_roove_shopify_domain()
+    if not resolved_shop_domain:
+        raise RuntimeError("SHOPIFY_ROOVE_SHOP_DOMAIN não configurado.")
+
+    access_token = _shopify_admin_access_token()
+    version = _shopify_api_version()
+    base_url = f"https://{resolved_shop_domain}/admin/api/{version}/orders.json"
+    found_orders = 0
+    persisted_orders = 0
+    persisted_items = 0
+    persisted_customers = 0
+    persisted_refunds = 0
+    page_count = 0
+    page_info: Optional[str] = None
+
+    headers = {
+        "X-Shopify-Access-Token": access_token,
+        "Accept": "application/json",
+    }
+
+    async with httpx.AsyncClient(timeout=60) as client:
+        while True:
+            page_count += 1
+            if page_info:
+                params = {"limit": "250", "page_info": page_info}
+            else:
+                params = {
+                    "status": "any",
+                    "limit": "250",
+                    "order": "created_at asc",
+                    "created_at_min": _shopify_period_timestamp(start),
+                    "created_at_max": _shopify_period_timestamp(end, end_of_day=True),
+                }
+
+            response = await client.get(base_url, headers=headers, params=params)
+            if response.status_code >= 400:
+                body = _clip(response.text, 500) or "-"
+                print(
+                    "[shopify][sync][http_error] "
+                    f"route=/api/shopify/sync client_id={client_id} shop_domain={resolved_shop_domain} "
+                    f"period={start.isoformat()}..{end.isoformat()} status={response.status_code} body={body}"
+                )
+            response.raise_for_status()
+            payload = response.json()
+            orders = payload.get("orders") if isinstance(payload, dict) else []
+            orders = orders if isinstance(orders, list) else []
+            found_orders += len(orders)
+
+            for raw_order in orders:
+                order = _safe_json(raw_order)
+                if not order:
+                    continue
+                result = await _handle_order_topic(
+                    client_id=client_id,
+                    shop_domain=resolved_shop_domain,
+                    payload=order,
+                )
+                persisted_orders += 1
+                persisted_items += _safe_int(result.get("items_upserted"), 0)
+                if _safe_str(result.get("customer_id")):
+                    persisted_customers += 1
+
+                for raw_refund in order.get("refunds") or []:
+                    refund = _safe_json(raw_refund)
+                    if not refund:
+                        continue
+                    refund.setdefault("order_id", order.get("id"))
+                    await _upsert_refund(
+                        client_id=client_id,
+                        shop_domain=resolved_shop_domain,
+                        payload=refund,
+                    )
+                    persisted_refunds += 1
+
+            page_info = _next_page_info(response.headers.get("link", ""))
+            if not page_info:
+                break
+
+    print(
+        "[shopify][sync] "
+        f"route=/api/shopify/sync client_id={client_id} shop_domain={resolved_shop_domain} "
+        f"period={start.isoformat()}..{end.isoformat()} orders_found={found_orders} "
+        f"orders_persisted={persisted_orders} items_persisted={persisted_items} "
+        f"customers_persisted={persisted_customers} refunds_persisted={persisted_refunds} pages={page_count}"
+    )
+    return {
+        "ok": True,
+        "client_id": client_id,
+        "shop_domain": resolved_shop_domain,
+        "period": {
+            "start": start.isoformat(),
+            "end": end.isoformat(),
+            "days": max(1, (end - start).days + 1),
+        },
+        "orders_found": found_orders,
+        "orders_persisted": persisted_orders,
+        "items_persisted": persisted_items,
+        "customers_persisted": persisted_customers,
+        "refunds_persisted": persisted_refunds,
+        "pages": page_count,
     }
 
 
