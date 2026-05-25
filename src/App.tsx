@@ -1,11 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
-import {
-  disableLocalAuth,
-  getSupabaseBootstrapError,
-  isLocalAuthEnabled,
-  supabase,
-} from "./app/supabase";
+import { getSupabaseBootstrapError, supabase } from "./app/supabase";
 import { listRooveConnections } from "./app/api";
 import {
   getCurrentAppRoute,
@@ -16,6 +11,7 @@ import { ROOVE_APP_NAME } from "./app/roove";
 import Login from "./pages/Login";
 import Onboarding from "./pages/Onboarding";
 import Dashboard from "./pages/Dashboard";
+import Shopify from "./pages/Shopify";
 import GoogleAnalytics from "./pages/GoogleAnalytics";
 import DashboardErrorBoundary from "./components/dashboard/DashboardErrorBoundary";
 
@@ -117,7 +113,6 @@ export default function App() {
   const [route, setRoute] = useState<AppRoute>(() => getCurrentAppRoute());
   const [bootError, setBootError] = useState<string | null>(authBootstrapError);
   const [authInitializing, setAuthInitializing] = useState(true);
-  const [localMode, setLocalMode] = useState(() => isLocalAuthEnabled());
 
   const isOrganicConnection = useCallback(
     (connection: { platform?: string | null; connection_type?: string | null; status?: string | null }) => {
@@ -132,7 +127,7 @@ export default function App() {
   const resolveAuthenticatedView = useCallback(
     async (candidateSession?: Session | null, requestedRoute: AppRoute = route) => {
       const activeSession = candidateSession ?? session;
-      if (!activeSession && !localMode) {
+      if (!activeSession) {
         authDebug("route.decision", {
           target: "login",
           reason: "missing_session",
@@ -144,7 +139,7 @@ export default function App() {
       setView("loading");
       setBootError(null);
 
-      if (requestedRoute === "google") {
+      if (requestedRoute === "shopify" || requestedRoute === "google") {
         authDebug("route.decision", {
           target: requestedRoute,
           reason: `authenticated_${requestedRoute}_report`,
@@ -181,7 +176,7 @@ export default function App() {
 
         authDebug("route.decision", {
           target: "dashboard",
-            reason: "authenticated_with_active_roove_connection",
+          reason: "authenticated_with_active_roove_connection",
           connectionsCount: connections.length,
         });
         setView("dashboard");
@@ -196,7 +191,7 @@ export default function App() {
         setView("dashboard");
       }
     },
-    [isOrganicConnection, localMode, route, session]
+    [isOrganicConnection, route, session]
   );
 
   useEffect(() => {
@@ -206,15 +201,6 @@ export default function App() {
     const bootstrapAuth = async () => {
       const callbackSignal = hasSupabaseCallbackSignalInUrl();
       authDebug("bootstrap.start", { callbackSignalInUrl: callbackSignal });
-
-      if (localMode) {
-        if (!mounted) return;
-        setSession(null);
-        setBootError(null);
-        setView("dashboard");
-        setAuthInitializing(false);
-        return;
-      }
 
       if (!authClient || authBootstrapError) {
         authDebug("bootstrap.config_error", {
@@ -305,7 +291,7 @@ export default function App() {
       mounted = false;
       sub.subscription.unsubscribe();
     };
-  }, [localMode]);
+  }, []);
 
   useEffect(() => {
     const handlePopState = () => {
@@ -323,16 +309,12 @@ export default function App() {
       setView("loading");
       return;
     }
-    if (localMode) {
-      setView("dashboard");
-      return;
-    }
     if (!session) {
       setView("login");
       return;
     }
     void resolveAuthenticatedView(session, route);
-  }, [authInitializing, localMode, resolveAuthenticatedView, route, session]);
+  }, [authInitializing, resolveAuthenticatedView, route, session]);
 
   const openRoute = useCallback(
     (nextRoute: AppRoute) => {
@@ -343,16 +325,6 @@ export default function App() {
   );
 
   async function handleLogout() {
-    if (localMode) {
-      disableLocalAuth();
-      setLocalMode(false);
-      clearSetupUrlParams();
-      setSession(null);
-      setBootError(null);
-      setAuthInitializing(false);
-      setView("login");
-      return;
-    }
     if (!supabase) {
       authDebug("logout", { cleared: true, mode: "no_supabase_client" });
       clearSetupUrlParams();
@@ -387,25 +359,16 @@ export default function App() {
     [resolveAuthenticatedView, route, session]
   );
 
-  const handleLocalLogin = useCallback(() => {
-    setLocalMode(true);
-    setBootError(null);
-    setSession(null);
-    setAuthInitializing(false);
-    setView("dashboard");
-  }, []);
-
   if (view === "loading") {
     return <AppLoading />;
   }
 
-  if (view === "login" || (!session && !localMode)) {
+  if (view === "login" || !session) {
     return (
       <Login
         initialError={bootError}
         authChecking={authInitializing}
         onPasswordLoginSuccess={handlePasswordLoginSuccess}
-        onLocalLogin={handleLocalLogin}
       />
     );
   }
@@ -423,19 +386,27 @@ export default function App() {
 
   return (
     <DashboardErrorBoundary>
-      {route === "google" ? (
-        <GoogleAnalytics
-          isAuthenticated={!!session || localMode}
+      {route === "shopify" ? (
+        <Shopify
           onLogout={handleLogout}
           onOpenDashboard={() => openRoute("dashboard")}
+          onOpenGoogleReport={() => openRoute("google")}
+        />
+      ) : route === "google" ? (
+        <GoogleAnalytics
+          isAuthenticated={!!session}
+          onLogout={handleLogout}
+          onOpenDashboard={() => openRoute("dashboard")}
+          onOpenShopifyReport={() => openRoute("shopify")}
         />
       ) : (
         <Dashboard
           onLogout={handleLogout}
-          isAuthenticated={!!session || localMode}
+          isAuthenticated={!!session}
           bootstrapError={bootError}
           onOpenSetup={() => setView("setup")}
           onOpenGoogleAnalytics={() => openRoute("google")}
+          onOpenShopifyReport={() => openRoute("shopify")}
         />
       )}
     </DashboardErrorBoundary>

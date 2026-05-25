@@ -8,15 +8,8 @@ export const ROOVE_APP_NAME = "Roove Metrics";
 export const ROOVE_PANEL_NAME = "Painel Roove";
 export const ROOVE_CLIENT_ID = envClientId;
 export const DEFAULT_CLIENT_ID = envClientId;
-export const ACTIVE_CLIENT_ID = envClientId;
-export const ACTIVE_CLIENT_NAME = ROOVE_CLIENT_NAME;
 export const API_BASE = envApiBase;
 export const IS_DEFAULT_CLIENT_ID_MISSING = !envClientId;
-export const IS_ROOVE_CLIENT_ID_FALLBACK = !envClientId;
-
-export const GA4_CLIENT_OPTIONS = [
-  { id: ROOVE_CLIENT_ID, name: ROOVE_CLIENT_NAME },
-];
 
 export function getRooveClientConfigurationWarning(): string | null {
   if (!IS_DEFAULT_CLIENT_ID_MISSING) return null;

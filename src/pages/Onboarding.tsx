@@ -17,8 +17,8 @@ import type {
   MetaDiscoveredInstagramAsset,
 } from "../app/types";
 import {
+  DEFAULT_CLIENT_ID,
   getRooveClientConfigurationWarning,
-  ROOVE_CLIENT_ID,
   ROOVE_APP_NAME,
   ROOVE_CLIENT_NAME,
 } from "../app/roove";
@@ -167,7 +167,7 @@ export default function Onboarding({
     if (!oauthStatus) return;
 
     try {
-      if (clientFromCallback && clientFromCallback !== ROOVE_CLIENT_ID) {
+      if (clientFromCallback && clientFromCallback !== DEFAULT_CLIENT_ID) {
         throw new Error("O callback recebido nao corresponde ao VITE_DEFAULT_CLIENT_ID.");
       }
 
@@ -422,7 +422,8 @@ export default function Onboarding({
           <div className="onboardingConnBlock">
             <div className="h1">Fontes adicionais</div>
             <div className="p">
-              O frontend local usa a stack atual de Instagram, Meta Ads e Google Analytics da Roove.
+              O frontend ja suporta a stack atual de Instagram e Meta Ads da Roove. Shopify continua
+              dependendo de endpoints dedicados no backend.
             </div>
             <div className={`pill ${paidConnections.length ? "pillSoft" : "pillDanger"}`} style={{ marginTop: 10 }}>
               {paidConnections.length

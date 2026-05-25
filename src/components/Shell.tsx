@@ -1,5 +1,6 @@
 // src/components/Shell.tsx
 import React from "react";
+import logo from "../assets/roove-logo.svg";
 
 type Props = {
   title: string;
@@ -35,22 +36,14 @@ export default function Shell({
       <header className="topbar glass">
         <div className="topbarInner">
           <div className="brand">
-            <div className={`brandLogoWrap ${logoSrc ? "" : "brandLogoBadge"}`.trim()}>
-              {logoSrc ? (
-                <img className="brandLogoImg" src={logoSrc} alt={logoAlt || "Roove"} />
-              ) : (
-                <span className="brandLogoText" aria-label={logoAlt || "Roove"}>
-                  Roove
-                </span>
-              )}
+            <div className="brandLogoWrap">
+              <img className="brandLogoImg" src={logoSrc || logo} alt={logoAlt || "Roove"} />
             </div>
 
-            {title || subtitle ? (
-              <div className="brandText">
-                {title ? <div className="brandTitle">{title}</div> : null}
-                {subtitle ? <div className="brandSub">{subtitle}</div> : null}
-              </div>
-            ) : null}
+            <div className="brandText">
+              <div className="brandTitle">{title}</div>
+              {subtitle ? <div className="brandSub">{subtitle}</div> : null}
+            </div>
           </div>
 
           <div className="topbarRight">

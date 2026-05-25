@@ -18,8 +18,6 @@ import type {
   Ga4EventGroupItem,
   Ga4EventRow,
   Ga4ReportResponse,
-  FbitsOrdersResponse,
-  FbitsOrdersSummaryResponse,
   ShopifyCustomersResponse,
   ShopifyReportResponse,
   StoriesResponse,
@@ -29,12 +27,11 @@ import type {
   PaidDashboardResponse,
 } from "./types";
 import type { Period } from "./PeriodContext";
-import { getSupabaseBootstrapError, isLocalAuthEnabled, supabase } from "./supabase";
+import { getSupabaseBootstrapError, supabase } from "./supabase";
 import {
   getRooveClientConfigurationWarning,
-  getRooveClientId,
+  getDefaultClientId,
 } from "./roove";
-import { getSelectedPeriodRange } from "./periodRange";
 
 const rawApiBase = String(import.meta.env.VITE_API_BASE || "").trim();
 
@@ -65,9 +62,6 @@ type JsonRecord = Record<string, unknown>;
 type PeriodQueryInput = Partial<Period> & { days?: number; month?: string };
 type RequestSignalOptions = {
   signal?: AbortSignal;
-};
-type ClientRequestOptions = RequestSignalOptions & {
-  clientId?: string | null;
 };
 
 function asRecord(value: unknown): JsonRecord {
@@ -116,10 +110,8 @@ function buildPeriodParams(input: number | PeriodQueryInput | undefined, default
   }
 
   const period = input || {};
-  const selectedRange =
-    period.start && period.end ? getSelectedPeriodRange(period) : null;
-  const start = asString(selectedRange?.start || period.start).trim();
-  const end = asString(selectedRange?.end || period.end).trim();
+  const start = asString(period.start).trim();
+  const end = asString(period.end).trim();
   const month = asString(period.month).trim();
   const days = positiveInt(period.days, defaultDays);
 
@@ -143,7 +135,7 @@ function buildPeriodParams(input: number | PeriodQueryInput | undefined, default
 }
 
 function pathWithPeriod(path: string, input: number | PeriodQueryInput | undefined, defaultDays: number): string {
-  return pathWithClientId(`${path}?${buildPeriodParams(input, defaultDays)}`, getRooveClientId());
+  return `${path}?${buildPeriodParams(input, defaultDays)}`;
 }
 
 function pathWithPeriodAndExtras(
@@ -158,22 +150,10 @@ function pathWithPeriodAndExtras(
     if (typeof value === "string" && !value.trim()) continue;
     params.set(key, String(value));
   }
-  if (!params.has("client_id")) params.set("client_id", getRooveClientId());
   return `${path}?${params.toString()}`;
 }
 
-function pathWithClientId(path: string, clientId?: string | null): string {
-  const cid = asString(clientId).trim();
-  if (!cid) return path;
-
-  const [base, query = ""] = path.split("?", 2);
-  const params = new URLSearchParams(query);
-  params.set("client_id", cid);
-  return `${base}?${params.toString()}`;
-}
-
 async function getAccessToken(): Promise<string | null> {
-  if (isLocalAuthEnabled()) return null;
   if (!supabase) {
     throw new Error(
       getSupabaseBootstrapError() ||
@@ -207,12 +187,12 @@ function toHeaders(init?: HeadersInit): Headers {
 
 async function http<T>(path: string, init: RequestInit = {}): Promise<T> {
   const token = await getAccessToken();
-  if (!token && !isLocalAuthEnabled()) {
+  if (!token) {
     throw new Error("Sessão expirada. Faça login novamente.");
   }
 
   const headers = toHeaders(init.headers);
-  const clientId = getRooveClientId();
+  const clientId = getDefaultClientId();
   if (!clientId) {
     throw new Error(
       getRooveClientConfigurationWarning() ||
@@ -220,7 +200,7 @@ async function http<T>(path: string, init: RequestInit = {}): Promise<T> {
     );
   }
   headers.set("Content-Type", "application/json");
-  if (token) headers.set("Authorization", `Bearer ${token}`);
+  headers.set("Authorization", `Bearer ${token}`);
   headers.set("X-Client-Id", clientId);
 
   let res: Response;
@@ -250,23 +230,14 @@ async function http<T>(path: string, init: RequestInit = {}): Promise<T> {
         asString(j?.detail) ||
         asString(j?.message) ||
         asString(errObj?.message);
-      console.warn("[api]", {
-        path,
-        status: res.status,
-        detail: detail || txt || null,
-      });
+      const warning = getRooveClientConfigurationWarning();
+      throw new Error(
+        [warning, detail || txt || `HTTP ${res.status}`].filter(Boolean).join(" ")
+      );
     } catch {
-      console.warn("[api]", {
-        path,
-        status: res.status,
-        detail: txt || null,
-      });
+      const warning = getRooveClientConfigurationWarning();
+      throw new Error([warning, txt || `HTTP ${res.status}`].filter(Boolean).join(" "));
     }
-    throw new Error(
-      res.status === 401
-        ? "Sua sessão precisa ser renovada."
-        : "Não foi possível carregar os dados agora."
-    );
   }
 
   if (res.status === 204) return {} as T;
@@ -279,7 +250,7 @@ function mapTotals(raw: unknown): DashboardTotals {
     impressions: asNumber(r.impressions),
     reach: asNumber(r.reach),
     total_interactions: asNumber(r.total_interactions ?? r.interactions),
-    website_clicks: asNumber(r.website_clicks ?? r.website_clicks_day),
+    website_clicks: asNumber(r.website_clicks),
     profile_views: asNumber(r.profile_views),
     accounts_engaged: asNumber(r.accounts_engaged),
   };
@@ -291,11 +262,11 @@ function mapPeriodTotals(raw: unknown): DashboardPeriodTotals {
     impressions: asNumber(r.impressions),
     reach: asNumber(r.reach),
     total_interactions: asNumber(r.total_interactions ?? r.interactions),
-    website_clicks: asNumber(r.website_clicks ?? r.website_clicks_day),
+    website_clicks: asNumber(r.website_clicks),
     profile_views: asNumber(r.profile_views),
     accounts_engaged: asNumber(r.accounts_engaged),
     followers_growth: asNumber(r.followers_growth),
-    followers_current: asNumber(r.followers_current ?? r.followers_count),
+    followers_current: asNumber(r.followers_current),
   };
 }
 
@@ -309,10 +280,10 @@ function mapDailyRows(rawRows: unknown[]): DashboardDailyRow[] {
       impressions: asNumber(r.impressions),
       reach: asNumber(r.reach),
       total_interactions: asNumber(r.total_interactions ?? r.interactions),
-      website_clicks: asNumber(r.website_clicks ?? r.website_clicks_day),
+      website_clicks: asNumber(r.website_clicks),
       profile_views: asNumber(r.profile_views),
       accounts_engaged: asNumber(r.accounts_engaged),
-      followers: asNumber(r.followers ?? r.followers_count),
+      followers: asNumber(r.followers),
     };
   });
 }
@@ -652,8 +623,6 @@ function normalizeMedia(raw: unknown): MediaResponse {
         timestamp: asString(item.timestamp) || null,
         permalink: asString(item.permalink) || null,
         thumb_url: asString(item.thumb_url) || null,
-        thumbnail_url: asString(item.thumbnail_url) || null,
-        media_url: asString(item.media_url) || null,
         insights: asRecord(item.insights),
       };
     }),
@@ -952,7 +921,7 @@ function normalizeGa4Report(raw: unknown): Ga4ReportResponse {
 
 function rooveClientPath(path: string): string {
   const suffix = path.startsWith("/") ? path : `/${path}`;
-  return `/api/clients/${encodeURIComponent(getRooveClientId())}${suffix}`;
+  return `/api/clients/${encodeURIComponent(getDefaultClientId())}${suffix}`;
 }
 
 export async function connectRooveMeta(
@@ -966,7 +935,7 @@ export async function connectRooveMeta(
 
 export async function startRooveMetaOAuth(): Promise<MetaOauthStartResponse> {
   return http<MetaOauthStartResponse>(
-    `/api/oauth/meta/start?client_id=${encodeURIComponent(getRooveClientId())}`
+    `/api/oauth/meta/start?client_id=${encodeURIComponent(getDefaultClientId())}`
   );
 }
 
@@ -974,7 +943,7 @@ export async function discoverRooveMetaAssets(
   handoff: string
 ): Promise<MetaDiscoverAssetsResponse> {
   return http<MetaDiscoverAssetsResponse>(
-    `/api/oauth/meta/discover-assets?client_id=${encodeURIComponent(getRooveClientId())}&handoff=${encodeURIComponent(handoff)}`
+    `/api/oauth/meta/discover-assets?client_id=${encodeURIComponent(getDefaultClientId())}&handoff=${encodeURIComponent(handoff)}`
   );
 }
 
@@ -1011,7 +980,7 @@ export async function refreshAll(
     params.set("start", start);
     params.set("end", end);
   }
-  return http<RefreshAllResponse>(`/api/ig/sync?${params.toString()}`, { method: "POST" });
+  return http<RefreshAllResponse>(`/api/ig/refresh_all?${params.toString()}`, { method: "POST" });
 }
 
 export async function getDashboard(
@@ -1151,108 +1120,52 @@ export async function getShopifyCustomers(
   return normalizeShopifyCustomers(raw);
 }
 
-export async function getFbitsOrdersSummary(
-  period: number | PeriodQueryInput = 30
-): Promise<FbitsOrdersSummaryResponse> {
-  const fallbackDays =
-    typeof period === "number" ? positiveInt(period, 30) : positiveInt(period.days, 30);
-  return http<FbitsOrdersSummaryResponse>(
-    pathWithPeriod("/api/fbits/dashboard", period, fallbackDays)
-  );
-}
-
-export async function getFbitsOrders(
-  period: number | PeriodQueryInput = 30
-): Promise<FbitsOrdersResponse> {
-  const fallbackDays =
-    typeof period === "number" ? positiveInt(period, 30) : positiveInt(period.days, 30);
-  return http<FbitsOrdersResponse>(pathWithPeriod("/api/fbits/orders", period, fallbackDays));
-}
-
-export async function syncFbits(
-  period?: PeriodQueryInput,
-  options?: { clientId?: string | null }
-): Promise<JsonRecord> {
-  const params = new URLSearchParams();
-  const start = asString(period?.start).trim();
-  const end = asString(period?.end).trim();
-  const days = positiveInt(period?.days, 30);
-  const clientId = asString(options?.clientId).trim() || getRooveClientId();
-  if (start) params.set("start", start);
-  if (end) params.set("end", end);
-  if (!start || !end) params.set("days", String(days));
-  if (clientId) params.set("client_id", clientId);
-  return http<JsonRecord>(`/api/fbits/sync?${params.toString()}`, {
-    method: "POST",
-  });
-}
-
 export async function getGa4Report(
-  period: number | PeriodQueryInput = 30,
-  options?: ClientRequestOptions
+  period: number | PeriodQueryInput = 30
 ): Promise<Ga4ReportResponse> {
   const fallbackDays =
     typeof period === "number" ? positiveInt(period, 30) : positiveInt(period.days, 30);
-  const raw = await http<unknown>(
-    pathWithClientId(pathWithPeriod("/api/google/ga4/report", period, fallbackDays), options?.clientId),
-    { signal: options?.signal }
-  );
+  const raw = await http<unknown>(pathWithPeriod("/api/google/ga4/report", period, fallbackDays));
   return normalizeGa4Report(raw);
 }
 
 export async function getGa4Channels(
-  period: number | PeriodQueryInput = 30,
-  options?: ClientRequestOptions
+  period: number | PeriodQueryInput = 30
 ): Promise<Ga4CollectionResponse<Ga4ChannelRow>> {
   const fallbackDays =
     typeof period === "number" ? positiveInt(period, 30) : positiveInt(period.days, 30);
-  const raw = await http<unknown>(
-    pathWithClientId(pathWithPeriod("/api/google/ga4/channels", period, fallbackDays), options?.clientId),
-    { signal: options?.signal }
-  );
+  const raw = await http<unknown>(pathWithPeriod("/api/google/ga4/channels", period, fallbackDays));
   return normalizeGa4Channels(raw);
 }
 
 export async function getGa4Campaigns(
-  period: number | PeriodQueryInput = 30,
-  options?: ClientRequestOptions
+  period: number | PeriodQueryInput = 30
 ): Promise<Ga4CollectionResponse<Ga4CampaignRow>> {
   const fallbackDays =
     typeof period === "number" ? positiveInt(period, 30) : positiveInt(period.days, 30);
-  const raw = await http<unknown>(
-    pathWithClientId(pathWithPeriod("/api/google/ga4/campaigns", period, fallbackDays), options?.clientId),
-    { signal: options?.signal }
-  );
+  const raw = await http<unknown>(pathWithPeriod("/api/google/ga4/campaigns", period, fallbackDays));
   return normalizeGa4Campaigns(raw);
 }
 
 export async function getGa4Events(
-  period: number | PeriodQueryInput = 30,
-  options?: ClientRequestOptions
+  period: number | PeriodQueryInput = 30
 ): Promise<Ga4CollectionResponse<Ga4EventRow>> {
   const fallbackDays =
     typeof period === "number" ? positiveInt(period, 30) : positiveInt(period.days, 30);
-  const raw = await http<unknown>(
-    pathWithClientId(pathWithPeriod("/api/google/ga4/events", period, fallbackDays), options?.clientId),
-    { signal: options?.signal }
-  );
+  const raw = await http<unknown>(pathWithPeriod("/api/google/ga4/events", period, fallbackDays));
   return normalizeGa4Events(raw);
 }
 
 export async function syncGa4(
-  period?: PeriodQueryInput,
-  options?: { clientId?: string | null }
+  period?: PeriodQueryInput
 ): Promise<JsonRecord> {
   const params = new URLSearchParams();
   const start = String(period?.start || "").trim();
   const end = String(period?.end || "").trim();
   const days = positiveInt(period?.days, 30);
-  const clientId = asString(options?.clientId).trim();
-  const resolvedClientId = clientId || getRooveClientId();
   if (start) params.set("start", start);
   if (end) params.set("end", end);
   if (!start || !end) params.set("days", String(days));
-  if (resolvedClientId) params.set("client_id", resolvedClientId);
   return http<JsonRecord>(`/api/google/ga4/sync?${params.toString()}`, {
     method: "POST",
   });
@@ -1260,14 +1173,12 @@ export async function syncGa4(
 
 export async function syncAds(
   period?: PeriodQueryInput,
-  options?: { connectionId?: string | null; clientId?: string | null }
+  options?: { connectionId?: string | null }
 ): Promise<JsonRecord> {
-  const resolvedClientId = String(options?.clientId || getRooveClientId()).trim();
   const payload: JsonRecord = {};
   const start = String(period?.start || "").trim();
   const end = String(period?.end || "").trim();
   const connectionId = String(options?.connectionId || "").trim();
-  if (resolvedClientId) payload.client_id = resolvedClientId;
   if (start) payload.since = start;
   if (end) payload.until = end;
   if (connectionId) payload.connection_id = connectionId;

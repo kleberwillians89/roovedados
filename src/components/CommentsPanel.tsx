@@ -10,8 +10,6 @@ type Props = {
   refreshing?: boolean;
   updatedAtLabel?: string | null;
   hasMore?: boolean;
-  total?: number;
-  hasOrganicData?: boolean;
   error?: string | null;
   message?: string | null;
   onLoadMore?: () => void;
@@ -28,8 +26,6 @@ function CommentsPanel({
   refreshing = false,
   updatedAtLabel = null,
   hasMore = false,
-  total,
-  hasOrganicData = false,
   error = null,
   message = null,
   onLoadMore,
@@ -40,17 +36,13 @@ function CommentsPanel({
   const hasTopWords = safeTopWords.length > 0;
   const showUnavailable = Boolean(error) && !safeComments.length && !hasTopWords && !loading;
   const showEmpty = !loading && !showUnavailable && !safeComments.length && !hasTopWords;
-  const commentCount =
-    typeof total === "number" && Number.isFinite(total)
-      ? Math.max(total, safeComments.length)
-      : safeComments.length;
   const pillLabel = loading
     ? "Carregando..."
     : refreshing
       ? "Atualizando..."
       : showUnavailable
         ? "Indisponível"
-        : `${commentCount} comentários`;
+        : `${safeComments.length} comentários`;
 
   return (
     <div className="card cardWide">
@@ -72,22 +64,15 @@ function CommentsPanel({
           title="Comentários indisponíveis"
           description="Esse bloco é secundário e pode falhar sem comprometer o restante da página."
           tone="unavailable"
-          message={
-            message ||
-            (hasOrganicData ? "Não foi possível carregar os comentários agora." : "Comentários ainda não sincronizados.")
-          }
+          message={message || `Falha ao carregar comentários: ${error}`}
           secondaryMessage="O resumo principal continua disponível enquanto esse bloco se recupera."
         />
       ) : showEmpty ? (
         <MetaStateNotice
-          title={hasOrganicData ? "Sem comentários no período" : "Comentários ainda não sincronizados"}
-          description={
-            hasOrganicData
-              ? "A leitura orgânica está disponível e não retornou comentários nesse recorte."
-              : "A nuvem de palavras e a lista aparecem quando a sincronização orgânica trouxer comentários."
-          }
+          title="Sem comentários no período"
+          description="A nuvem de palavras e a lista aparecem quando houver comentários sincronizados."
           tone="empty"
-          message={message || (hasOrganicData ? "Sem dados no período." : "Comentários ainda não sincronizados.")}
+          message={message || "Nenhum comentário foi encontrado para esse recorte."}
         />
       ) : (
         <>

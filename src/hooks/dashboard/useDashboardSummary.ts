@@ -18,7 +18,6 @@ type SummaryData = {
   dash: DashboardResponse | null;
   media: IgMediaItem[];
   comments: CommentItem[];
-  commentsTotal: number;
   topWords: TopWord[];
   stories: StoryItem[];
   storiesAvailable: boolean;
@@ -96,6 +95,17 @@ function arrayOrEmpty<T>(value: unknown): T[] {
   return Array.isArray(value) ? (value as T[]) : [];
 }
 
+function hasSummaryContent(value: SummaryData | null | undefined): boolean {
+  if (!value) return false;
+  return (
+    Boolean(value.dash) ||
+    value.media.length > 0 ||
+    value.comments.length > 0 ||
+    value.topWords.length > 0 ||
+    value.stories.length > 0
+  );
+}
+
 export default function useDashboardSummary({
   isAuthenticated,
   activeClientId,
@@ -156,7 +166,7 @@ export default function useDashboardSummary({
   const cachedInitial = useMemo<SummaryData>(
     () => {
       const cachedComments = resolvedConnectionId
-        ? readDashboardCache<{ comments: CommentItem[]; commentsTotal?: number; topWords: TopWord[] }>(commentsCacheKey)
+        ? readDashboardCache<{ comments: CommentItem[]; topWords: TopWord[] }>(commentsCacheKey)
         : null;
       const cachedStoriesRaw = resolvedConnectionId
         ? readDashboardCache<StoryItem[] | StoriesCachePayload>(storiesCacheKey)
@@ -184,10 +194,6 @@ export default function useDashboardSummary({
           ? arrayOrEmpty<IgMediaItem>(readDashboardCache<IgMediaItem[]>(mediaCacheKey))
           : [],
         comments: arrayOrEmpty<CommentItem>(cachedComments?.comments),
-        commentsTotal:
-          typeof cachedComments?.commentsTotal === "number"
-            ? cachedComments.commentsTotal
-            : arrayOrEmpty<CommentItem>(cachedComments?.comments).length,
         topWords: arrayOrEmpty<TopWord>(cachedComments?.topWords),
         stories: resolvedConnectionId ? cachedStories.stories : [],
         storiesAvailable: resolvedConnectionId
@@ -226,8 +232,19 @@ export default function useDashboardSummary({
 
   useEffect(() => {
     if (resolvedConnectionId) {
-      setData(cachedInitial);
-      dataRef.current = cachedInitial;
+      if (hasSummaryContent(cachedInitial)) {
+        setData(cachedInitial);
+        dataRef.current = cachedInitial;
+      } else if (!autoLoadStories) {
+        const nextData = {
+          ...dataRef.current,
+          stories: cachedInitial.stories,
+          storiesAvailable: cachedInitial.storiesAvailable,
+          storiesMessage: cachedInitial.storiesMessage,
+        };
+        setData(nextData);
+        dataRef.current = nextData;
+      }
       setSectionErrors(emptySectionErrors());
       setSummaryError(null);
       return;
@@ -236,7 +253,6 @@ export default function useDashboardSummary({
       dash: null,
       media: [],
       comments: [],
-      commentsTotal: 0,
       topWords: [],
       stories: [],
       storiesAvailable: true,
@@ -263,7 +279,6 @@ export default function useDashboardSummary({
         dash: null,
         media: [],
         comments: [],
-        commentsTotal: 0,
         topWords: [],
         stories: [],
         storiesAvailable: true,
@@ -410,17 +425,12 @@ export default function useDashboardSummary({
             );
             if (reqId !== requestRef.current) return;
             const comments = arrayOrEmpty<CommentItem>(commentsResponse.comments);
-            const commentsTotal =
-              typeof commentsResponse.total === "number"
-                ? Math.max(commentsResponse.total, comments.length)
-                : comments.length;
             const topWords = arrayOrEmpty<TopWord>(commentsResponse.top_words);
-            writeDashboardCache(commentsCacheKey, { comments, commentsTotal, topWords }, 180_000);
+            writeDashboardCache(commentsCacheKey, { comments, topWords }, 180_000);
             startTransition(() => {
               setData((previous) => ({
                 ...previous,
                 comments,
-                commentsTotal,
                 topWords,
               }));
             });

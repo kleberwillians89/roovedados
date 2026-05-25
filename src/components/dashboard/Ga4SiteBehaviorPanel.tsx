@@ -1,5 +1,4 @@
 import type { Ga4EventGroup, Ga4ReportResponse } from "../../app/types";
-import { formatSelectedPeriodLabel, type SelectedPeriodRange } from "../../app/periodRange";
 
 type Props = {
   report: Ga4ReportResponse | null;
@@ -7,12 +6,23 @@ type Props = {
   refreshing: boolean;
   error: string | null;
   updatedAtLabel?: string | null;
-  period?: SelectedPeriodRange | null;
 };
 
 function fmt(n: number) {
   try {
     return n.toLocaleString("pt-BR");
+  } catch {
+    return String(n);
+  }
+}
+
+function fmtCurrency(n: number) {
+  try {
+    return n.toLocaleString("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+      maximumFractionDigits: 2,
+    });
   } catch {
     return String(n);
   }
@@ -26,7 +36,8 @@ function hasGa4Data(report: Ga4ReportResponse | null) {
   if (!report) return false;
   return (
     report.summary.sessions > 0 ||
-    report.summary.event_count > 0
+    report.summary.event_count > 0 ||
+    report.summary.purchase_revenue > 0
   );
 }
 
@@ -141,7 +152,6 @@ export default function Ga4SiteBehaviorPanel({
   refreshing,
   error,
   updatedAtLabel,
-  period,
 }: Props) {
   const hasData = hasGa4Data(report);
 
@@ -149,15 +159,12 @@ export default function Ga4SiteBehaviorPanel({
     <div className="card cardWide ga4SectionCard">
       <div className="sectionHeader">
         <div>
-          <div className="h1">Comportamento GA4</div>
+          <div className="h1">Comportamento do site</div>
           <div className="p">
             Leitura executiva do GA4 para entender navegação, intenção de compra e sinais de engajamento no site da Roove.
           </div>
         </div>
         <div className="dashboardSectionMeta">
-          <span className="pill">
-            {period ? `Fonte: GA4 · ${formatSelectedPeriodLabel(period)}` : "Fonte: GA4"}
-          </span>
           {updatedAtLabel ? <span className="dashboardTimestamp">{updatedAtLabel}</span> : null}
           {refreshing ? <span className="pill">Atualizando...</span> : null}
         </div>
@@ -166,7 +173,7 @@ export default function Ga4SiteBehaviorPanel({
       {loading && !report ? <Ga4Skeleton /> : null}
 
       {error && !report ? (
-        <div className="smallMuted">Não foi possível carregar a leitura de comportamento do site agora.</div>
+        <div className="smallMuted">Não foi possível carregar a leitura de comportamento do site. {error}</div>
       ) : null}
 
       {!loading && report && !hasData ? (
@@ -175,7 +182,7 @@ export default function Ga4SiteBehaviorPanel({
 
       {report && hasData ? (
         <div className="ga4SectionBody">
-          {error ? <div className="smallMuted ga4InlineNotice">Atualização parcial. Mantendo a última leitura disponível.</div> : null}
+          {error ? <div className="smallMuted ga4InlineNotice">Atualização parcial. {error}</div> : null}
 
           <div className="ga4SummaryGrid">
             <SummaryCard
@@ -184,13 +191,13 @@ export default function Ga4SiteBehaviorPanel({
               hint={`${fmt(report.summary.active_users)} usuários ativos`}
             />
             <SummaryCard
-              label="Eventos observados"
-              value={fmt(report.summary.event_count)}
-              hint={`${fmt(report.summary.total_users)} usuários totais`}
+              label="Receita atribuída"
+              value={fmtCurrency(report.summary.purchase_revenue)}
+              hint={`${fmt(report.summary.purchases)} compras`}
             />
             <SummaryCard
-              label="Usuários ativos"
-              value={fmt(report.summary.active_users)}
+              label="Eventos observados"
+              value={fmt(report.summary.event_count)}
               hint={`${fmt(report.summary.total_users)} usuários totais`}
             />
             <SummaryCard
@@ -206,7 +213,7 @@ export default function Ga4SiteBehaviorPanel({
                 <div className="h1">Funil principal do site</div>
                 <div className="p">Etapas mais relevantes da jornada comercial, organizadas para leitura rápida em reunião.</div>
               </div>
-              <span className="pill">Tracking comportamental GA4</span>
+              <span className="pill">{fmtCurrency(report.summary.purchase_revenue)} em receita</span>
             </div>
 
             <div className="ga4JourneyGrid">
@@ -234,7 +241,7 @@ export default function Ga4SiteBehaviorPanel({
                 hint="Checkout qualificado"
               />
               <JourneyStep
-                label="Evento purchase GA4"
+                label="Comprou"
                 value={report.commerce_journey.summary.purchase}
                 rate={report.commerce_journey.summary.purchase_rate}
                 hint="Conversão final"
