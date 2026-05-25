@@ -8,9 +8,9 @@ import { syncGa4 } from "../app/api";
 import { usePeriod } from "../app/PeriodContext";
 import type { Ga4CampaignRow, Ga4ChannelRow, Ga4EventGroup, Ga4ReportResponse } from "../app/types";
 import {
+  DEFAULT_CLIENT_ID,
   getRooveClientConfigurationWarning,
   ROOVE_APP_NAME,
-  ROOVE_CLIENT_ID,
   ROOVE_CLIENT_NAME,
 } from "../app/roove";
 import { CHART_COLORS, formatDatePtBr, formatFullNumber } from "../components/dashboard/chartTheme";
@@ -271,7 +271,7 @@ export default function GoogleAnalytics({
     reloadGa4,
   } = useDashboardGa4({
     isAuthenticated,
-    activeClientId: ROOVE_CLIENT_ID,
+    activeClientId: DEFAULT_CLIENT_ID,
     period,
   });
 

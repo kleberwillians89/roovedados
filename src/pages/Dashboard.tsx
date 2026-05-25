@@ -62,9 +62,9 @@ import {
 } from "../app/connectionState";
 import { usePeriod } from "../app/PeriodContext";
 import {
+  DEFAULT_CLIENT_ID,
   getRooveClientConfigurationWarning,
   ROOVE_APP_NAME,
-  ROOVE_CLIENT_ID,
   ROOVE_CLIENT_NAME,
 } from "../app/roove";
 
@@ -1054,7 +1054,7 @@ export default function Dashboard({
   const [chartGranularity, setChartGranularity] = useState<ChartGranularity>("monthly");
   const [monthA, setMonthA] = useState<string>("");
   const [monthB, setMonthB] = useState<string>("");
-  const activeClientId = ROOVE_CLIENT_ID;
+  const activeClientId = DEFAULT_CLIENT_ID;
   const connectionsCacheKey = useMemo(
     () =>
       buildDashboardCacheKey("meta-connections", {

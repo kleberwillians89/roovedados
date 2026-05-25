@@ -11,6 +11,7 @@ from api_support import (
     _log_endpoint_call,
     _log_endpoint_done,
     _log_endpoint_error,
+    _pick_client_id,
     _runtime_error_status,
     _started,
     _structured_error_response,
@@ -33,7 +34,7 @@ from services.shopify_reporting import (
     build_shopify_report,
     resolve_shopify_report_period,
 )
-from services.tenant import require_user_id
+from services.tenant import resolve_client_id
 
 router = APIRouter(tags=["shopify"])
 
@@ -162,21 +163,22 @@ async def shopify_webhook(
 
 @router.get("/api/shopify/debug/recent-webhooks")
 async def shopify_recent_webhooks(
+    client_id: str | None = Query(default=None),
+    x_client_id: str | None = Header(default=None, alias="X-Client-Id"),
     limit: int = Query(default=20, ge=1, le=100),
     include_payload: bool = Query(default=False),
     authorization: str | None = Header(default=None),
 ):
     started = _started()
     endpoint = "/api/shopify/debug/recent-webhooks"
-    client_id = get_shopify_client_id()
     user_for_log = await _log_endpoint_call(
         endpoint=endpoint,
         authorization=authorization,
-        x_client_id=None,
+        x_client_id=x_client_id,
         client_id=client_id,
     )
     try:
-        await require_user_id(authorization)
+        client_id = await resolve_client_id(_pick_client_id(client_id, x_client_id), authorization)
         rows = await list_recent_shopify_webhooks(
             client_id=client_id,
             limit=limit,
@@ -186,7 +188,7 @@ async def shopify_recent_webhooks(
             endpoint=endpoint,
             started=started,
             user_id=user_for_log,
-            x_client_id=None,
+            x_client_id=x_client_id,
             client_id=client_id,
         )
         return {
@@ -200,7 +202,7 @@ async def shopify_recent_webhooks(
             endpoint=endpoint,
             exc=exc,
             user_id=user_for_log,
-            x_client_id=None,
+            x_client_id=x_client_id,
             client_id=client_id,
         )
         return _structured_error_response(
@@ -214,7 +216,7 @@ async def shopify_recent_webhooks(
             endpoint=endpoint,
             exc=exc,
             user_id=user_for_log,
-            x_client_id=None,
+            x_client_id=x_client_id,
             client_id=client_id,
         )
         return _structured_error_response(
@@ -228,7 +230,7 @@ async def shopify_recent_webhooks(
             endpoint=endpoint,
             exc=exc,
             user_id=user_for_log,
-            x_client_id=None,
+            x_client_id=x_client_id,
             client_id=client_id,
         )
         return _structured_error_response(
@@ -241,6 +243,8 @@ async def shopify_recent_webhooks(
 
 @router.get("/api/shopify/report")
 async def shopify_report(
+    client_id: str | None = Query(default=None),
+    x_client_id: str | None = Header(default=None, alias="X-Client-Id"),
     start: str | None = Query(default=None),
     end: str | None = Query(default=None),
     days: int = Query(default=30, ge=1, le=366),
@@ -248,25 +252,24 @@ async def shopify_report(
 ):
     started = _started()
     endpoint = "/api/shopify/report"
-    client_id = get_shopify_client_id()
     user_for_log = await _log_endpoint_call(
         endpoint=endpoint,
         authorization=authorization,
-        x_client_id=None,
+        x_client_id=x_client_id,
         client_id=client_id,
         days=days,
         start=start,
         end=end,
     )
     try:
-        await require_user_id(authorization)
+        client_id = await resolve_client_id(_pick_client_id(client_id, x_client_id), authorization)
         period = resolve_shopify_report_period(start=start, end=end, days=days)
         payload = await build_shopify_report(client_id=client_id, period=period)
         _log_endpoint_done(
             endpoint=endpoint,
             started=started,
             user_id=user_for_log,
-            x_client_id=None,
+            x_client_id=x_client_id,
             client_id=client_id,
         )
         return payload
@@ -275,7 +278,7 @@ async def shopify_report(
             endpoint=endpoint,
             exc=exc,
             user_id=user_for_log,
-            x_client_id=None,
+            x_client_id=x_client_id,
             client_id=client_id,
         )
         return _structured_error_response(
@@ -289,7 +292,7 @@ async def shopify_report(
             endpoint=endpoint,
             exc=exc,
             user_id=user_for_log,
-            x_client_id=None,
+            x_client_id=x_client_id,
             client_id=client_id,
         )
         return _structured_error_response(
@@ -303,7 +306,7 @@ async def shopify_report(
             endpoint=endpoint,
             exc=exc,
             user_id=user_for_log,
-            x_client_id=None,
+            x_client_id=x_client_id,
             client_id=client_id,
         )
         return _structured_error_response(
@@ -316,6 +319,8 @@ async def shopify_report(
 
 @router.get("/api/shopify/customers")
 async def shopify_customers(
+    client_id: str | None = Query(default=None),
+    x_client_id: str | None = Header(default=None, alias="X-Client-Id"),
     start: str | None = Query(default=None),
     end: str | None = Query(default=None),
     days: int = Query(default=30, ge=1, le=366),
@@ -323,25 +328,24 @@ async def shopify_customers(
 ):
     started = _started()
     endpoint = "/api/shopify/customers"
-    client_id = get_shopify_client_id()
     user_for_log = await _log_endpoint_call(
         endpoint=endpoint,
         authorization=authorization,
-        x_client_id=None,
+        x_client_id=x_client_id,
         client_id=client_id,
         days=days,
         start=start,
         end=end,
     )
     try:
-        await require_user_id(authorization)
+        client_id = await resolve_client_id(_pick_client_id(client_id, x_client_id), authorization)
         period = resolve_shopify_report_period(start=start, end=end, days=days)
         payload = await build_shopify_customers_report(client_id=client_id, period=period)
         _log_endpoint_done(
             endpoint=endpoint,
             started=started,
             user_id=user_for_log,
-            x_client_id=None,
+            x_client_id=x_client_id,
             client_id=client_id,
         )
         return payload
@@ -350,7 +354,7 @@ async def shopify_customers(
             endpoint=endpoint,
             exc=exc,
             user_id=user_for_log,
-            x_client_id=None,
+            x_client_id=x_client_id,
             client_id=client_id,
         )
         return _structured_error_response(
@@ -364,7 +368,7 @@ async def shopify_customers(
             endpoint=endpoint,
             exc=exc,
             user_id=user_for_log,
-            x_client_id=None,
+            x_client_id=x_client_id,
             client_id=client_id,
         )
         return _structured_error_response(
@@ -378,7 +382,7 @@ async def shopify_customers(
             endpoint=endpoint,
             exc=exc,
             user_id=user_for_log,
-            x_client_id=None,
+            x_client_id=x_client_id,
             client_id=client_id,
         )
         return _structured_error_response(
@@ -391,21 +395,22 @@ async def shopify_customers(
 
 @router.get("/api/shopify/debug/recent-orders")
 async def shopify_recent_orders(
+    client_id: str | None = Query(default=None),
+    x_client_id: str | None = Header(default=None, alias="X-Client-Id"),
     limit: int = Query(default=20, ge=1, le=100),
     include_raw: bool = Query(default=False),
     authorization: str | None = Header(default=None),
 ):
     started = _started()
     endpoint = "/api/shopify/debug/recent-orders"
-    client_id = get_shopify_client_id()
     user_for_log = await _log_endpoint_call(
         endpoint=endpoint,
         authorization=authorization,
-        x_client_id=None,
+        x_client_id=x_client_id,
         client_id=client_id,
     )
     try:
-        await require_user_id(authorization)
+        client_id = await resolve_client_id(_pick_client_id(client_id, x_client_id), authorization)
         rows = await list_recent_shopify_orders(
             client_id=client_id,
             limit=limit,
@@ -415,7 +420,7 @@ async def shopify_recent_orders(
             endpoint=endpoint,
             started=started,
             user_id=user_for_log,
-            x_client_id=None,
+            x_client_id=x_client_id,
             client_id=client_id,
         )
         return {
@@ -429,7 +434,7 @@ async def shopify_recent_orders(
             endpoint=endpoint,
             exc=exc,
             user_id=user_for_log,
-            x_client_id=None,
+            x_client_id=x_client_id,
             client_id=client_id,
         )
         return _structured_error_response(
@@ -443,7 +448,7 @@ async def shopify_recent_orders(
             endpoint=endpoint,
             exc=exc,
             user_id=user_for_log,
-            x_client_id=None,
+            x_client_id=x_client_id,
             client_id=client_id,
         )
         return _structured_error_response(
@@ -457,7 +462,7 @@ async def shopify_recent_orders(
             endpoint=endpoint,
             exc=exc,
             user_id=user_for_log,
-            x_client_id=None,
+            x_client_id=x_client_id,
             client_id=client_id,
         )
         return _structured_error_response(

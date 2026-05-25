@@ -45,14 +45,17 @@ async def require_user_id(authorization: Optional[str]) -> str:
 
 async def resolve_client_id(client_id: Optional[str], authorization: Optional[str]) -> str:
     """
-    Resolve tenant do request usando somente membership.
-    Sem fallback de DEFAULT_CLIENT_ID.
+    Resolve tenant do request usando somente client_id explícito + membership.
+    Sem fallback de DEFAULT_CLIENT_ID nem default por membership única.
     """
     user_id = await require_user_id(authorization)
-    requested = (client_id or "").strip() or "-"
+    requested_client_id = (client_id or "").strip()
+    if not requested_client_id:
+        raise HTTPException(status_code=400, detail="client_id é obrigatório na query ou no header X-Client-Id.")
+    requested = requested_client_id
     try:
-        resolved = await sb_get_client_id_for_user(user_id, requested_client_id=client_id)
-        source = "explicit" if (client_id or "").strip() else "default_single_membership"
+        resolved = await sb_get_client_id_for_user(user_id, requested_client_id=requested_client_id)
+        source = "explicit"
         print(
             f"[tenant] user_id={user_id} requested_client_id={requested} "
             f"resolved_client_id={resolved} source={source}"

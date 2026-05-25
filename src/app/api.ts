@@ -30,7 +30,7 @@ import type { Period } from "./PeriodContext";
 import { getSupabaseBootstrapError, supabase } from "./supabase";
 import {
   getRooveClientConfigurationWarning,
-  getRooveClientId,
+  getDefaultClientId,
 } from "./roove";
 
 const rawApiBase = String(import.meta.env.VITE_API_BASE || "").trim();
@@ -192,9 +192,16 @@ async function http<T>(path: string, init: RequestInit = {}): Promise<T> {
   }
 
   const headers = toHeaders(init.headers);
+  const clientId = getDefaultClientId();
+  if (!clientId) {
+    throw new Error(
+      getRooveClientConfigurationWarning() ||
+        "VITE_DEFAULT_CLIENT_ID nao foi definido."
+    );
+  }
   headers.set("Content-Type", "application/json");
   headers.set("Authorization", `Bearer ${token}`);
-  headers.set("X-Client-Id", getRooveClientId());
+  headers.set("X-Client-Id", clientId);
 
   let res: Response;
   try {
@@ -914,7 +921,7 @@ function normalizeGa4Report(raw: unknown): Ga4ReportResponse {
 
 function rooveClientPath(path: string): string {
   const suffix = path.startsWith("/") ? path : `/${path}`;
-  return `/api/clients/${encodeURIComponent(getRooveClientId())}${suffix}`;
+  return `/api/clients/${encodeURIComponent(getDefaultClientId())}${suffix}`;
 }
 
 export async function connectRooveMeta(
@@ -928,7 +935,7 @@ export async function connectRooveMeta(
 
 export async function startRooveMetaOAuth(): Promise<MetaOauthStartResponse> {
   return http<MetaOauthStartResponse>(
-    `/api/oauth/meta/start?client_id=${encodeURIComponent(getRooveClientId())}`
+    `/api/oauth/meta/start?client_id=${encodeURIComponent(getDefaultClientId())}`
   );
 }
 
@@ -936,7 +943,7 @@ export async function discoverRooveMetaAssets(
   handoff: string
 ): Promise<MetaDiscoverAssetsResponse> {
   return http<MetaDiscoverAssetsResponse>(
-    `/api/oauth/meta/discover-assets?client_id=${encodeURIComponent(getRooveClientId())}&handoff=${encodeURIComponent(handoff)}`
+    `/api/oauth/meta/discover-assets?client_id=${encodeURIComponent(getDefaultClientId())}&handoff=${encodeURIComponent(handoff)}`
   );
 }
 

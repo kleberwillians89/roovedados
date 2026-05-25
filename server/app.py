@@ -1,6 +1,7 @@
 import os
 import traceback
 from typing import Any, Dict, Optional
+from urllib.parse import urlparse
 
 from services.env_loader import ensure_env_loaded
 
@@ -105,6 +106,59 @@ def root():
 @app.get("/health")
 def health():
     return {"ok": True}
+
+
+def _partial_url(value: str) -> str:
+    text = str(value or "").strip()
+    if not text:
+        return ""
+    try:
+        parsed = urlparse(text)
+        host = parsed.netloc
+        if len(host) > 18:
+            host = f"{host[:8]}...{host[-8:]}"
+        return f"{parsed.scheme}://{host}"
+    except Exception:
+        if len(text) <= 18:
+            return text
+        return f"{text[:8]}...{text[-8:]}"
+
+
+@app.get("/api/debug/client")
+async def api_debug_client(
+    request: Request,
+    client_id: str | None = None,
+    x_client_id: str | None = Header(default=None, alias="X-Client-Id"),
+    authorization: str | None = Header(default=None),
+):
+    received_client_id = _pick_client_id(client_id, x_client_id)
+    resolved_client_id = None
+    resolve_error = None
+    try:
+        resolved_client_id = await resolve_client_id(received_client_id, authorization)
+    except Exception as exc:
+        resolve_error = f"{exc.__class__.__name__}: {_clip(str(exc), 180)}"
+
+    api_base = (os.getenv("API_BASE") or os.getenv("VITE_API_BASE") or "").strip()
+    if not api_base:
+        api_base = f"{request.url.scheme}://{request.url.netloc}"
+
+    print(
+        "[api][debug_client] "
+        f"route=/api/debug/client received_client_id={received_client_id or '-'} "
+        f"resolved_client_id={resolved_client_id or '-'}"
+    )
+    return {
+        "ok": resolve_error is None,
+        "route": "/api/debug/client",
+        "client_id_received": received_client_id,
+        "client_id_query": client_id,
+        "client_id_header": x_client_id,
+        "client_id_resolved": resolved_client_id,
+        "resolve_error": resolve_error,
+        "api_base": api_base,
+        "supabase_url_partial": _partial_url(os.getenv("SUPABASE_URL") or ""),
+    }
 
 app.include_router(shopify_router)
 app.include_router(google_router)

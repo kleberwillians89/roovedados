@@ -33,6 +33,22 @@ def _base_url() -> str:
     return _env("SUPABASE_URL").rstrip("/") + "/rest/v1"
 
 
+def _client_id_from_filters(filters: Optional[Dict[str, str]]) -> str:
+    if not filters:
+        return "-"
+    value = str(filters.get("client_id") or "").strip()
+    if value.startswith("eq."):
+        return value[3:].strip() or "-"
+    return value or "-"
+
+
+def _client_id_from_query(query: str) -> str:
+    for part in str(query or "").split("&"):
+        if part.startswith("client_id=eq."):
+            return part.split("client_id=eq.", 1)[1].strip() or "-"
+    return "-"
+
+
 def _response_text(exc: httpx.HTTPStatusError) -> str:
     try:
         return (exc.response.text or "").strip()
@@ -141,8 +157,21 @@ async def sb_query(table: str, query: str) -> List[Dict[str, Any]]:
     Compat helper: aceita query pronta.
     Ex: sb_query("ig_profile_snapshots", "client_id=eq.xxx&order=snapshot_date.asc")
     """
-    data = await _request("GET", f"/{table}?{query}&select=*")
+    client_id = _client_id_from_query(query)
+    print(
+        "[supabase][tenant_audit] "
+        f"table={table} client_id={client_id} mode=query"
+    )
+    if client_id == "-":
+        print(f"[supabase][tenant_warning] table={table} mode=query missing_client_id_filter=1")
+    select_all = "*"
+    suffix = "" if "select=" in str(query or "") else f"&select={select_all}"
+    data = await _request("GET", f"/{table}?{query}{suffix}")
     return data if isinstance(data, list) else []
+
+
+async def sb_get_many(table: str, query: str) -> List[Dict[str, Any]]:
+    return await sb_query(table, query)
 
 
 async def sb_select(
@@ -164,6 +193,13 @@ async def sb_select(
     if offset is not None:
         params["offset"] = str(max(0, int(offset)))
 
+    client_id = _client_id_from_filters(filters)
+    print(
+        "[supabase][tenant_audit] "
+        f"table={table} client_id={client_id} mode=select"
+    )
+    if client_id == "-":
+        print(f"[supabase][tenant_warning] table={table} mode=select missing_client_id_filter=1")
     data = await _request("GET", f"/{table}", params=params)
     return data if isinstance(data, list) else []
 
@@ -172,7 +208,16 @@ async def sb_get_one(
     table: str,
     query: str,
 ) -> Optional[Dict[str, Any]]:
-    data = await _request("GET", f"/{table}?{query}&select=*")
+    client_id = _client_id_from_query(query)
+    print(
+        "[supabase][tenant_audit] "
+        f"table={table} client_id={client_id} mode=get_one"
+    )
+    if client_id == "-":
+        print(f"[supabase][tenant_warning] table={table} mode=get_one missing_client_id_filter=1")
+    select_all = "*"
+    suffix = "" if "select=" in str(query or "") else f"&select={select_all}"
+    data = await _request("GET", f"/{table}?{query}{suffix}")
     if isinstance(data, list) and data:
         return data[0]
     return None

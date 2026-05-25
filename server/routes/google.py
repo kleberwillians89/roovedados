@@ -7,6 +7,7 @@ from api_support import (
     _log_endpoint_call,
     _log_endpoint_done,
     _log_endpoint_error,
+    _pick_client_id,
     _runtime_error_status,
     _started,
     _structured_error_response,
@@ -19,8 +20,8 @@ from services.ga4_reporting import (
     resolve_ga4_report_period,
 )
 from services.ga4_sync import sync_ga4_for_period
-from services.single_tenant import get_roove_client_id, get_roove_ga4_property_id
-from services.tenant import require_user_id
+from services.single_tenant import get_roove_ga4_property_id
+from services.tenant import resolve_client_id
 
 router = APIRouter(tags=["google"])
 
@@ -33,12 +34,19 @@ GOOGLE_ENDPOINTS = [
 ]
 
 
-def _ga4_fixed_context() -> tuple[str, str]:
-    return get_roove_client_id(), get_roove_ga4_property_id()
+async def _ga4_request_context(
+    *,
+    client_id: str | None,
+    x_client_id: str | None,
+    authorization: str | None,
+) -> tuple[str, str]:
+    return await resolve_client_id(_pick_client_id(client_id, x_client_id), authorization), get_roove_ga4_property_id()
 
 
 @router.post("/api/google/ga4/sync")
 async def ga4_sync(
+    client_id: str | None = Query(default=None),
+    x_client_id: str | None = Header(default=None, alias="X-Client-Id"),
     start: str | None = Query(default=None),
     end: str | None = Query(default=None),
     days: int = Query(default=30, ge=1, le=366),
@@ -46,18 +54,21 @@ async def ga4_sync(
 ):
     started = _started()
     endpoint = "/api/google/ga4/sync"
-    client_id, property_id = _ga4_fixed_context()
     user_for_log = await _log_endpoint_call(
         endpoint=endpoint,
         authorization=authorization,
-        x_client_id=None,
+        x_client_id=x_client_id,
         client_id=client_id,
         days=days,
         start=start,
         end=end,
     )
     try:
-        await require_user_id(authorization)
+        client_id, property_id = await _ga4_request_context(
+            client_id=client_id,
+            x_client_id=x_client_id,
+            authorization=authorization,
+        )
         payload = await sync_ga4_for_period(
             client_id=client_id,
             property_id=property_id,
@@ -72,7 +83,7 @@ async def ga4_sync(
             endpoint=endpoint,
             started=started,
             user_id=user_for_log,
-            x_client_id=None,
+            x_client_id=x_client_id,
             client_id=client_id,
         )
         return payload
@@ -81,7 +92,7 @@ async def ga4_sync(
             endpoint=endpoint,
             exc=exc,
             user_id=user_for_log,
-            x_client_id=None,
+            x_client_id=x_client_id,
             client_id=client_id,
         )
         return _structured_error_response(
@@ -95,7 +106,7 @@ async def ga4_sync(
             endpoint=endpoint,
             exc=exc,
             user_id=user_for_log,
-            x_client_id=None,
+            x_client_id=x_client_id,
             client_id=client_id,
         )
         return _structured_error_response(
@@ -109,7 +120,7 @@ async def ga4_sync(
             endpoint=endpoint,
             exc=exc,
             user_id=user_for_log,
-            x_client_id=None,
+            x_client_id=x_client_id,
             client_id=client_id,
         )
         return _structured_error_response(
@@ -122,6 +133,8 @@ async def ga4_sync(
 
 @router.get("/api/google/ga4/report")
 async def ga4_report(
+    client_id: str | None = Query(default=None),
+    x_client_id: str | None = Header(default=None, alias="X-Client-Id"),
     start: str | None = Query(default=None),
     end: str | None = Query(default=None),
     days: int = Query(default=30, ge=1, le=366),
@@ -129,18 +142,21 @@ async def ga4_report(
 ):
     started = _started()
     endpoint = "/api/google/ga4/report"
-    client_id, property_id = _ga4_fixed_context()
     user_for_log = await _log_endpoint_call(
         endpoint=endpoint,
         authorization=authorization,
-        x_client_id=None,
+        x_client_id=x_client_id,
         client_id=client_id,
         days=days,
         start=start,
         end=end,
     )
     try:
-        await require_user_id(authorization)
+        client_id, property_id = await _ga4_request_context(
+            client_id=client_id,
+            x_client_id=x_client_id,
+            authorization=authorization,
+        )
         period = resolve_ga4_report_period(start=start, end=end, days=days)
         payload = await build_ga4_report(
             client_id=client_id,
@@ -151,7 +167,7 @@ async def ga4_report(
             endpoint=endpoint,
             started=started,
             user_id=user_for_log,
-            x_client_id=None,
+            x_client_id=x_client_id,
             client_id=client_id,
         )
         return payload
@@ -160,7 +176,7 @@ async def ga4_report(
             endpoint=endpoint,
             exc=exc,
             user_id=user_for_log,
-            x_client_id=None,
+            x_client_id=x_client_id,
             client_id=client_id,
         )
         return _structured_error_response(
@@ -174,7 +190,7 @@ async def ga4_report(
             endpoint=endpoint,
             exc=exc,
             user_id=user_for_log,
-            x_client_id=None,
+            x_client_id=x_client_id,
             client_id=client_id,
         )
         return _structured_error_response(
@@ -188,7 +204,7 @@ async def ga4_report(
             endpoint=endpoint,
             exc=exc,
             user_id=user_for_log,
-            x_client_id=None,
+            x_client_id=x_client_id,
             client_id=client_id,
         )
         return _structured_error_response(
@@ -201,6 +217,8 @@ async def ga4_report(
 
 @router.get("/api/google/ga4/channels")
 async def ga4_channels(
+    client_id: str | None = Query(default=None),
+    x_client_id: str | None = Header(default=None, alias="X-Client-Id"),
     start: str | None = Query(default=None),
     end: str | None = Query(default=None),
     days: int = Query(default=30, ge=1, le=366),
@@ -208,18 +226,21 @@ async def ga4_channels(
 ):
     started = _started()
     endpoint = "/api/google/ga4/channels"
-    client_id, property_id = _ga4_fixed_context()
     user_for_log = await _log_endpoint_call(
         endpoint=endpoint,
         authorization=authorization,
-        x_client_id=None,
+        x_client_id=x_client_id,
         client_id=client_id,
         days=days,
         start=start,
         end=end,
     )
     try:
-        await require_user_id(authorization)
+        client_id, property_id = await _ga4_request_context(
+            client_id=client_id,
+            x_client_id=x_client_id,
+            authorization=authorization,
+        )
         period = resolve_ga4_report_period(start=start, end=end, days=days)
         payload = await build_ga4_channels_report(
             client_id=client_id,
@@ -230,7 +251,7 @@ async def ga4_channels(
             endpoint=endpoint,
             started=started,
             user_id=user_for_log,
-            x_client_id=None,
+            x_client_id=x_client_id,
             client_id=client_id,
         )
         return payload
@@ -239,7 +260,7 @@ async def ga4_channels(
             endpoint=endpoint,
             exc=exc,
             user_id=user_for_log,
-            x_client_id=None,
+            x_client_id=x_client_id,
             client_id=client_id,
         )
         return _structured_error_response(
@@ -253,7 +274,7 @@ async def ga4_channels(
             endpoint=endpoint,
             exc=exc,
             user_id=user_for_log,
-            x_client_id=None,
+            x_client_id=x_client_id,
             client_id=client_id,
         )
         return _structured_error_response(
@@ -267,7 +288,7 @@ async def ga4_channels(
             endpoint=endpoint,
             exc=exc,
             user_id=user_for_log,
-            x_client_id=None,
+            x_client_id=x_client_id,
             client_id=client_id,
         )
         return _structured_error_response(
@@ -280,6 +301,8 @@ async def ga4_channels(
 
 @router.get("/api/google/ga4/campaigns")
 async def ga4_campaigns(
+    client_id: str | None = Query(default=None),
+    x_client_id: str | None = Header(default=None, alias="X-Client-Id"),
     start: str | None = Query(default=None),
     end: str | None = Query(default=None),
     days: int = Query(default=30, ge=1, le=366),
@@ -287,18 +310,21 @@ async def ga4_campaigns(
 ):
     started = _started()
     endpoint = "/api/google/ga4/campaigns"
-    client_id, property_id = _ga4_fixed_context()
     user_for_log = await _log_endpoint_call(
         endpoint=endpoint,
         authorization=authorization,
-        x_client_id=None,
+        x_client_id=x_client_id,
         client_id=client_id,
         days=days,
         start=start,
         end=end,
     )
     try:
-        await require_user_id(authorization)
+        client_id, property_id = await _ga4_request_context(
+            client_id=client_id,
+            x_client_id=x_client_id,
+            authorization=authorization,
+        )
         period = resolve_ga4_report_period(start=start, end=end, days=days)
         payload = await build_ga4_campaigns_report(
             client_id=client_id,
@@ -309,7 +335,7 @@ async def ga4_campaigns(
             endpoint=endpoint,
             started=started,
             user_id=user_for_log,
-            x_client_id=None,
+            x_client_id=x_client_id,
             client_id=client_id,
         )
         return payload
@@ -318,7 +344,7 @@ async def ga4_campaigns(
             endpoint=endpoint,
             exc=exc,
             user_id=user_for_log,
-            x_client_id=None,
+            x_client_id=x_client_id,
             client_id=client_id,
         )
         return _structured_error_response(
@@ -332,7 +358,7 @@ async def ga4_campaigns(
             endpoint=endpoint,
             exc=exc,
             user_id=user_for_log,
-            x_client_id=None,
+            x_client_id=x_client_id,
             client_id=client_id,
         )
         return _structured_error_response(
@@ -346,7 +372,7 @@ async def ga4_campaigns(
             endpoint=endpoint,
             exc=exc,
             user_id=user_for_log,
-            x_client_id=None,
+            x_client_id=x_client_id,
             client_id=client_id,
         )
         return _structured_error_response(
@@ -359,6 +385,8 @@ async def ga4_campaigns(
 
 @router.get("/api/google/ga4/events")
 async def ga4_events(
+    client_id: str | None = Query(default=None),
+    x_client_id: str | None = Header(default=None, alias="X-Client-Id"),
     start: str | None = Query(default=None),
     end: str | None = Query(default=None),
     days: int = Query(default=30, ge=1, le=366),
@@ -366,18 +394,21 @@ async def ga4_events(
 ):
     started = _started()
     endpoint = "/api/google/ga4/events"
-    client_id, property_id = _ga4_fixed_context()
     user_for_log = await _log_endpoint_call(
         endpoint=endpoint,
         authorization=authorization,
-        x_client_id=None,
+        x_client_id=x_client_id,
         client_id=client_id,
         days=days,
         start=start,
         end=end,
     )
     try:
-        await require_user_id(authorization)
+        client_id, property_id = await _ga4_request_context(
+            client_id=client_id,
+            x_client_id=x_client_id,
+            authorization=authorization,
+        )
         period = resolve_ga4_report_period(start=start, end=end, days=days)
         payload = await build_ga4_events_report(
             client_id=client_id,
@@ -388,7 +419,7 @@ async def ga4_events(
             endpoint=endpoint,
             started=started,
             user_id=user_for_log,
-            x_client_id=None,
+            x_client_id=x_client_id,
             client_id=client_id,
         )
         return payload
@@ -397,7 +428,7 @@ async def ga4_events(
             endpoint=endpoint,
             exc=exc,
             user_id=user_for_log,
-            x_client_id=None,
+            x_client_id=x_client_id,
             client_id=client_id,
         )
         return _structured_error_response(
@@ -411,7 +442,7 @@ async def ga4_events(
             endpoint=endpoint,
             exc=exc,
             user_id=user_for_log,
-            x_client_id=None,
+            x_client_id=x_client_id,
             client_id=client_id,
         )
         return _structured_error_response(
@@ -425,7 +456,7 @@ async def ga4_events(
             endpoint=endpoint,
             exc=exc,
             user_id=user_for_log,
-            x_client_id=None,
+            x_client_id=x_client_id,
             client_id=client_id,
         )
         return _structured_error_response(

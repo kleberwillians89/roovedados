@@ -17,9 +17,9 @@ import type {
   MetaDiscoveredInstagramAsset,
 } from "../app/types";
 import {
+  DEFAULT_CLIENT_ID,
   getRooveClientConfigurationWarning,
   ROOVE_APP_NAME,
-  ROOVE_CLIENT_ID,
   ROOVE_CLIENT_NAME,
 } from "../app/roove";
 import logo from "../assets/roove-logo.svg";
@@ -167,8 +167,8 @@ export default function Onboarding({
     if (!oauthStatus) return;
 
     try {
-      if (clientFromCallback && clientFromCallback !== ROOVE_CLIENT_ID) {
-        throw new Error("O callback recebido nao corresponde ao client_id fixo da Roove.");
+      if (clientFromCallback && clientFromCallback !== DEFAULT_CLIENT_ID) {
+        throw new Error("O callback recebido nao corresponde ao VITE_DEFAULT_CLIENT_ID.");
       }
 
       if (oauthStatus === "error") {
@@ -397,7 +397,7 @@ export default function Onboarding({
             <div>
               <div className="h1">Cliente fixo da aplicação</div>
               <div className="p">
-                Todas as chamadas autenticadas usam o client_id fixo da {ROOVE_CLIENT_NAME},
+                Todas as chamadas autenticadas usam o client_id de {ROOVE_CLIENT_NAME},
                 resolvido a partir de <code>VITE_DEFAULT_CLIENT_ID</code>.
               </div>
             </div>

@@ -1,12 +1,9 @@
 from __future__ import annotations
-import os
 from datetime import datetime, timezone, date
 from typing import Any, Dict, List, Optional, Tuple
 import re
 
 from .ig_supabase import sb_get_many
-
-DEFAULT_CLIENT_ID = (os.getenv("DEFAULT_CLIENT_ID") or "").strip()
 
 def _ym(d: str) -> str:
     # d = 'YYYY-MM-DD'
@@ -26,9 +23,9 @@ def _pct(curr: int, prev: int) -> float:
     return round(((curr - prev) / prev) * 100.0, 1)
 
 async def get_dashboard(client_id: Optional[str], days: int = 30) -> Dict[str, Any]:
-    cid = client_id or DEFAULT_CLIENT_ID
+    cid = (client_id or "").strip()
     if not cid:
-        raise RuntimeError("DEFAULT_CLIENT_ID não configurado")
+        raise RuntimeError("client_id é obrigatório")
 
     # pega 2 períodos para calcular delta (ex: 30 dias atual vs 30 dias anterior)
     total_days = max(2, min(180, days * 2))
@@ -36,7 +33,12 @@ async def get_dashboard(client_id: Optional[str], days: int = 30) -> Dict[str, A
     # snapshots: ordena desc e limita (Supabase REST: order=...&limit=...)
     rows = await sb_get_many(
         "ig_profile_snapshots",
-        f"client_id=eq.{cid}&select=*&order=snapshot_date.desc&limit={total_days}"
+        (
+            "client_id=eq.{cid}"
+            "&select=id,client_id,snapshot_date,reach_day,profile_views_day,"
+            "website_clicks_day,accounts_engaged_day,total_interactions_day,followers_count"
+            "&order=snapshot_date.desc&limit={total_days}"
+        ).format(cid=cid, total_days=total_days)
     )
 
     # normaliza e ordena asc
