@@ -198,7 +198,7 @@ def _shopify_secret() -> str:
     return secret
 
 
-def _shopify_admin_access_token() -> str:
+def _shopify_admin_access_token() -> Tuple[str, str]:
     ensure_env_loaded()
     for env_name in (
         "SHOPIFY_ADMIN_ACCESS_TOKEN",
@@ -208,7 +208,7 @@ def _shopify_admin_access_token() -> str:
     ):
         token = _env(env_name)
         if token:
-            return token
+            return token, env_name
     raise RuntimeError("Token Admin da Shopify não configurado.")
 
 
@@ -647,7 +647,7 @@ async def sync_shopify_orders_for_period(
     if not resolved_shop_domain:
         raise RuntimeError("SHOPIFY_ROOVE_SHOP_DOMAIN não configurado.")
 
-    access_token = _shopify_admin_access_token()
+    access_token, access_token_env = _shopify_admin_access_token()
     version = _shopify_api_version()
     base_url = f"https://{resolved_shop_domain}/admin/api/{version}/orders.json"
     found_orders = 0
@@ -662,6 +662,12 @@ async def sync_shopify_orders_for_period(
         "X-Shopify-Access-Token": access_token,
         "Accept": "application/json",
     }
+
+    print(
+        "[shopify][sync][token] "
+        f"route=/api/shopify/sync client_id={client_id} shop_domain={resolved_shop_domain} "
+        f"token_env={access_token_env} token_prefix={access_token[:5]}"
+    )
 
     async with httpx.AsyncClient(timeout=60) as client:
         while True:
