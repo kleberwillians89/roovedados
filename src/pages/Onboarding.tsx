@@ -17,12 +17,8 @@ import type {
   MetaDiscoveredInstagramAsset,
 } from "../app/types";
 import {
-<<<<<<< HEAD
-  DEFAULT_CLIENT_ID,
-  getRooveClientConfigurationWarning,
-=======
   getCuravinoClientConfigurationWarning,
->>>>>>> 3024ac36f03a369f5c9c77f359f0494a6c97cd59
+  ROOVE_CLIENT_ID,
   ROOVE_APP_NAME,
   ROOVE_CLIENT_NAME,
 } from "../app/curavino";
@@ -171,13 +167,8 @@ export default function Onboarding({
     if (!oauthStatus) return;
 
     try {
-<<<<<<< HEAD
-      if (clientFromCallback && clientFromCallback !== DEFAULT_CLIENT_ID) {
-        throw new Error("O callback recebido nao corresponde ao VITE_DEFAULT_CLIENT_ID.");
-=======
       if (clientFromCallback && clientFromCallback !== ROOVE_CLIENT_ID) {
-        throw new Error("O callback recebido nao corresponde ao client_id fixo da Curavino.");
->>>>>>> 3024ac36f03a369f5c9c77f359f0494a6c97cd59
+        throw new Error("O callback recebido nao corresponde ao VITE_DEFAULT_CLIENT_ID.");
       }
 
       if (oauthStatus === "error") {
@@ -406,13 +397,8 @@ export default function Onboarding({
             <div>
               <div className="h1">Cliente fixo da aplicação</div>
               <div className="p">
-<<<<<<< HEAD
                 Todas as chamadas autenticadas usam o client_id de {ROOVE_CLIENT_NAME},
                 resolvido a partir de <code>VITE_DEFAULT_CLIENT_ID</code>.
-=======
-                Todas as chamadas autenticadas usam o client_id fixo da {ROOVE_CLIENT_NAME},
-                resolvido a partir de <code>VITE_CURAVINO_CLIENT_ID</code>.
->>>>>>> 3024ac36f03a369f5c9c77f359f0494a6c97cd59
               </div>
             </div>
             <div className="pill pillSoft">{ROOVE_CLIENT_NAME}</div>

@@ -158,19 +158,13 @@
   justify-content: center;
   padding: 56px 48px;
   background: #f5f5f5;
-<<<<<<< HEAD
-=======
   min-width: 0;
->>>>>>> 3024ac36f03a369f5c9c77f359f0494a6c97cd59
 }
 
 .loginCardInner {
   width: 100%;
   max-width: 460px;
-<<<<<<< HEAD
-=======
   min-width: 0;
->>>>>>> 3024ac36f03a369f5c9c77f359f0494a6c97cd59
 }
 
 .loginCard h2,

@@ -61,17 +61,9 @@ import {
 import { usePeriod } from "../app/PeriodContext";
 import { formatSelectedPeriodLabel, getSelectedPeriodRange } from "../app/periodRange";
 import {
-<<<<<<< HEAD
-  DEFAULT_CLIENT_ID,
-  getRooveClientConfigurationWarning,
-  ROOVE_APP_NAME,
-  ROOVE_CLIENT_NAME,
-} from "../app/roove";
-=======
   ACTIVE_CLIENT_ID,
   getCuravinoClientConfigurationWarning,
 } from "../app/curavino";
->>>>>>> 3024ac36f03a369f5c9c77f359f0494a6c97cd59
 
 import "../styles/dashboard.css";
 
@@ -1035,11 +1027,7 @@ export default function Dashboard({
   const [paidPlatformFilter, setPaidPlatformFilter] = useState("");
   const [monthA, setMonthA] = useState<string>("");
   const [monthB, setMonthB] = useState<string>("");
-<<<<<<< HEAD
-  const activeClientId = DEFAULT_CLIENT_ID;
-=======
   const activeClientId = ACTIVE_CLIENT_ID;
->>>>>>> 3024ac36f03a369f5c9c77f359f0494a6c97cd59
   const connectionsCacheKey = useMemo(
     () =>
       buildDashboardCacheKey("meta-connections", {

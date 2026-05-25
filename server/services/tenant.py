@@ -52,21 +52,16 @@ async def resolve_client_id(client_id: Optional[str], authorization: Optional[st
     Sem fallback de DEFAULT_CLIENT_ID nem default por membership única.
     """
     user_id = await require_user_id(authorization)
-<<<<<<< HEAD
     requested_client_id = (client_id or "").strip()
     if not requested_client_id:
         raise HTTPException(status_code=400, detail="client_id é obrigatório na query ou no header X-Client-Id.")
     requested = requested_client_id
-=======
-    requested = (client_id or "").strip() or "-"
-    if _can_bypass_single_tenant_membership_in_dev(client_id):
-        resolved_client_id = (client_id or "").strip()
+    if _can_bypass_single_tenant_membership_in_dev(requested_client_id):
         print(
             f"[tenant] dev_bypass user_id={user_id} requested_client_id={requested} "
-            f"resolved_client_id={resolved_client_id} source=allow_no_auth_single_tenant"
+            f"resolved_client_id={requested_client_id} source=allow_no_auth_single_tenant"
         )
-        return resolved_client_id
->>>>>>> 3024ac36f03a369f5c9c77f359f0494a6c97cd59
+        return requested_client_id
     try:
         resolved = await sb_get_client_id_for_user(user_id, requested_client_id=requested_client_id)
         source = "explicit"

@@ -19,18 +19,10 @@ import type {
   Ga4ReportResponse,
 } from "../app/types";
 import {
-<<<<<<< HEAD
-  DEFAULT_CLIENT_ID,
-  getRooveClientConfigurationWarning,
-  ROOVE_APP_NAME,
-  ROOVE_CLIENT_NAME,
-} from "../app/roove";
-=======
   GA4_CLIENT_OPTIONS,
   ACTIVE_CLIENT_ID,
   getCuravinoClientConfigurationWarning,
 } from "../app/curavino";
->>>>>>> 3024ac36f03a369f5c9c77f359f0494a6c97cd59
 import { CHART_COLORS, formatDatePtBr, formatFullNumber } from "../components/dashboard/chartTheme";
 
 import "../styles/dashboard.css";
@@ -482,13 +474,8 @@ export default function GoogleAnalytics({
     reloadGa4,
   } = useDashboardGa4({
     isAuthenticated,
-<<<<<<< HEAD
-    activeClientId: DEFAULT_CLIENT_ID,
-    period,
-=======
     activeClientId: activeGa4ClientId,
     period: selectedRange,
->>>>>>> 3024ac36f03a369f5c9c77f359f0494a6c97cd59
   });
   const {
     fbitsData,

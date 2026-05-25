@@ -31,16 +31,10 @@ import type {
 import type { Period } from "./PeriodContext";
 import { getSupabaseBootstrapError, isLocalAuthEnabled, supabase } from "./supabase";
 import {
-<<<<<<< HEAD
-  getRooveClientConfigurationWarning,
-  getDefaultClientId,
-} from "./roove";
-=======
   getCuravinoClientConfigurationWarning,
   getCuravinoClientId,
 } from "./curavino";
 import { getSelectedPeriodRange } from "./periodRange";
->>>>>>> 3024ac36f03a369f5c9c77f359f0494a6c97cd59
 
 const rawApiBase = String(import.meta.env.VITE_API_BASE || "").trim();
 
@@ -218,21 +212,16 @@ async function http<T>(path: string, init: RequestInit = {}): Promise<T> {
   }
 
   const headers = toHeaders(init.headers);
-  const clientId = getDefaultClientId();
+  const clientId = getCuravinoClientId();
   if (!clientId) {
     throw new Error(
-      getRooveClientConfigurationWarning() ||
+      getCuravinoClientConfigurationWarning() ||
         "VITE_DEFAULT_CLIENT_ID nao foi definido."
     );
   }
   headers.set("Content-Type", "application/json");
-<<<<<<< HEAD
-  headers.set("Authorization", `Bearer ${token}`);
-  headers.set("X-Client-Id", clientId);
-=======
   if (token) headers.set("Authorization", `Bearer ${token}`);
-  headers.set("X-Client-Id", getCuravinoClientId());
->>>>>>> 3024ac36f03a369f5c9c77f359f0494a6c97cd59
+  headers.set("X-Client-Id", clientId);
 
   let res: Response;
   try {
@@ -963,11 +952,7 @@ function normalizeGa4Report(raw: unknown): Ga4ReportResponse {
 
 function curavinoClientPath(path: string): string {
   const suffix = path.startsWith("/") ? path : `/${path}`;
-<<<<<<< HEAD
-  return `/api/clients/${encodeURIComponent(getDefaultClientId())}${suffix}`;
-=======
   return `/api/clients/${encodeURIComponent(getCuravinoClientId())}${suffix}`;
->>>>>>> 3024ac36f03a369f5c9c77f359f0494a6c97cd59
 }
 
 export async function connectCuravinoMeta(
@@ -981,11 +966,7 @@ export async function connectCuravinoMeta(
 
 export async function startCuravinoMetaOAuth(): Promise<MetaOauthStartResponse> {
   return http<MetaOauthStartResponse>(
-<<<<<<< HEAD
-    `/api/oauth/meta/start?client_id=${encodeURIComponent(getDefaultClientId())}`
-=======
     `/api/oauth/meta/start?client_id=${encodeURIComponent(getCuravinoClientId())}`
->>>>>>> 3024ac36f03a369f5c9c77f359f0494a6c97cd59
   );
 }
 
@@ -993,11 +974,7 @@ export async function discoverCuravinoMetaAssets(
   handoff: string
 ): Promise<MetaDiscoverAssetsResponse> {
   return http<MetaDiscoverAssetsResponse>(
-<<<<<<< HEAD
-    `/api/oauth/meta/discover-assets?client_id=${encodeURIComponent(getDefaultClientId())}&handoff=${encodeURIComponent(handoff)}`
-=======
     `/api/oauth/meta/discover-assets?client_id=${encodeURIComponent(getCuravinoClientId())}&handoff=${encodeURIComponent(handoff)}`
->>>>>>> 3024ac36f03a369f5c9c77f359f0494a6c97cd59
   );
 }
 
