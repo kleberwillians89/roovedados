@@ -20,8 +20,13 @@ from services.ga4_reporting import (
     resolve_ga4_report_period,
 )
 from services.ga4_sync import sync_ga4_for_period
+<<<<<<< HEAD
 from services.single_tenant import get_roove_ga4_property_id
 from services.tenant import resolve_client_id
+=======
+from services.single_tenant import resolve_ga4_context_for_client
+from services.tenant import require_user_id
+>>>>>>> 3024ac36f03a369f5c9c77f359f0494a6c97cd59
 
 router = APIRouter(tags=["google"])
 
@@ -34,6 +39,7 @@ GOOGLE_ENDPOINTS = [
 ]
 
 
+<<<<<<< HEAD
 async def _ga4_request_context(
     *,
     client_id: str | None,
@@ -41,6 +47,21 @@ async def _ga4_request_context(
     authorization: str | None,
 ) -> tuple[str, str]:
     return await resolve_client_id(_pick_client_id(client_id, x_client_id), authorization), get_roove_ga4_property_id()
+=======
+def _pick_ga4_client_id(client_id: str | None, x_client_id: str | None) -> str | None:
+    return (client_id or "").strip() or (x_client_id or "").strip() or None
+
+
+def _ga4_request_context(client_id: str | None, x_client_id: str | None) -> tuple[str, str]:
+    requested = _pick_ga4_client_id(client_id, x_client_id)
+    resolved_client_id, property_id = resolve_ga4_context_for_client(requested)
+    print(
+        "[google][ga4_context] "
+        f"requested_client_id={requested or '-'} x_client_id={(x_client_id or '').strip() or '-'} "
+        f"resolved_client_id={resolved_client_id} property_id={property_id}"
+    )
+    return resolved_client_id, property_id
+>>>>>>> 3024ac36f03a369f5c9c77f359f0494a6c97cd59
 
 
 @router.post("/api/google/ga4/sync")
@@ -50,15 +71,26 @@ async def ga4_sync(
     start: str | None = Query(default=None),
     end: str | None = Query(default=None),
     days: int = Query(default=30, ge=1, le=366),
+    client_id: str | None = Query(default=None),
+    x_client_id: str | None = Header(default=None, alias="X-Client-Id"),
     authorization: str | None = Header(default=None),
 ):
     started = _started()
     endpoint = "/api/google/ga4/sync"
+<<<<<<< HEAD
+=======
+    requested_client_id = client_id
+    client_id, property_id = _ga4_request_context(client_id, x_client_id)
+>>>>>>> 3024ac36f03a369f5c9c77f359f0494a6c97cd59
     user_for_log = await _log_endpoint_call(
         endpoint=endpoint,
         authorization=authorization,
         x_client_id=x_client_id,
+<<<<<<< HEAD
         client_id=client_id,
+=======
+        client_id=requested_client_id or client_id,
+>>>>>>> 3024ac36f03a369f5c9c77f359f0494a6c97cd59
         days=days,
         start=start,
         end=end,
@@ -138,15 +170,26 @@ async def ga4_report(
     start: str | None = Query(default=None),
     end: str | None = Query(default=None),
     days: int = Query(default=30, ge=1, le=366),
+    client_id: str | None = Query(default=None),
+    x_client_id: str | None = Header(default=None, alias="X-Client-Id"),
     authorization: str | None = Header(default=None),
 ):
     started = _started()
     endpoint = "/api/google/ga4/report"
+<<<<<<< HEAD
+=======
+    requested_client_id = client_id
+    client_id, property_id = _ga4_request_context(client_id, x_client_id)
+>>>>>>> 3024ac36f03a369f5c9c77f359f0494a6c97cd59
     user_for_log = await _log_endpoint_call(
         endpoint=endpoint,
         authorization=authorization,
         x_client_id=x_client_id,
+<<<<<<< HEAD
         client_id=client_id,
+=======
+        client_id=requested_client_id or client_id,
+>>>>>>> 3024ac36f03a369f5c9c77f359f0494a6c97cd59
         days=days,
         start=start,
         end=end,
@@ -222,15 +265,26 @@ async def ga4_channels(
     start: str | None = Query(default=None),
     end: str | None = Query(default=None),
     days: int = Query(default=30, ge=1, le=366),
+    client_id: str | None = Query(default=None),
+    x_client_id: str | None = Header(default=None, alias="X-Client-Id"),
     authorization: str | None = Header(default=None),
 ):
     started = _started()
     endpoint = "/api/google/ga4/channels"
+<<<<<<< HEAD
+=======
+    requested_client_id = client_id
+    client_id, property_id = _ga4_request_context(client_id, x_client_id)
+>>>>>>> 3024ac36f03a369f5c9c77f359f0494a6c97cd59
     user_for_log = await _log_endpoint_call(
         endpoint=endpoint,
         authorization=authorization,
         x_client_id=x_client_id,
+<<<<<<< HEAD
         client_id=client_id,
+=======
+        client_id=requested_client_id or client_id,
+>>>>>>> 3024ac36f03a369f5c9c77f359f0494a6c97cd59
         days=days,
         start=start,
         end=end,
@@ -306,15 +360,26 @@ async def ga4_campaigns(
     start: str | None = Query(default=None),
     end: str | None = Query(default=None),
     days: int = Query(default=30, ge=1, le=366),
+    client_id: str | None = Query(default=None),
+    x_client_id: str | None = Header(default=None, alias="X-Client-Id"),
     authorization: str | None = Header(default=None),
 ):
     started = _started()
     endpoint = "/api/google/ga4/campaigns"
+<<<<<<< HEAD
+=======
+    requested_client_id = client_id
+    client_id, property_id = _ga4_request_context(client_id, x_client_id)
+>>>>>>> 3024ac36f03a369f5c9c77f359f0494a6c97cd59
     user_for_log = await _log_endpoint_call(
         endpoint=endpoint,
         authorization=authorization,
         x_client_id=x_client_id,
+<<<<<<< HEAD
         client_id=client_id,
+=======
+        client_id=requested_client_id or client_id,
+>>>>>>> 3024ac36f03a369f5c9c77f359f0494a6c97cd59
         days=days,
         start=start,
         end=end,
@@ -390,15 +455,26 @@ async def ga4_events(
     start: str | None = Query(default=None),
     end: str | None = Query(default=None),
     days: int = Query(default=30, ge=1, le=366),
+    client_id: str | None = Query(default=None),
+    x_client_id: str | None = Header(default=None, alias="X-Client-Id"),
     authorization: str | None = Header(default=None),
 ):
     started = _started()
     endpoint = "/api/google/ga4/events"
+<<<<<<< HEAD
+=======
+    requested_client_id = client_id
+    client_id, property_id = _ga4_request_context(client_id, x_client_id)
+>>>>>>> 3024ac36f03a369f5c9c77f359f0494a6c97cd59
     user_for_log = await _log_endpoint_call(
         endpoint=endpoint,
         authorization=authorization,
         x_client_id=x_client_id,
+<<<<<<< HEAD
         client_id=client_id,
+=======
+        client_id=requested_client_id or client_id,
+>>>>>>> 3024ac36f03a369f5c9c77f359f0494a6c97cd59
         days=days,
         start=start,
         end=end,
