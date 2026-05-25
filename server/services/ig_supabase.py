@@ -396,6 +396,44 @@ async def sb_get_client_memberships(user_id: str) -> List[Dict[str, Any]]:
         return out
 
 
+async def sb_get_client_for_public_request(client_id: str) -> Optional[Dict[str, Any]]:
+    """
+    Valida client_id explicito vindo de dashboard publico.
+    Alguns ambientes nao possuem colunas status/is_active em clients, entao
+    tentamos a consulta mais rica primeiro e caimos para o schema legado.
+    """
+    cid = (client_id or "").strip()
+    if not cid:
+        return None
+
+    filters = {"id": f"eq.{cid}"}
+    select_attempts = (
+        "id,name,slug,status,is_active",
+        "id,name,slug",
+        "id,name",
+        "id",
+    )
+    last_exc: Optional[httpx.HTTPStatusError] = None
+
+    for select in select_attempts:
+        try:
+            row = await sb_get_one_by("clients", filters=filters, select=select)
+            if row:
+                return row
+            return None
+        except httpx.HTTPStatusError as exc:
+            last_exc = exc
+            if not any(
+                _is_column_compat_error(exc, column)
+                for column in ("slug", "status", "is_active", "name")
+            ):
+                raise
+
+    if last_exc:
+        raise last_exc
+    return None
+
+
 async def sb_get_client_id_for_user(user_id: str, requested_client_id: Optional[str] = None) -> str:
     """
     Resolve client_id para usuário autenticado.

@@ -4,7 +4,12 @@ from typing import Optional, Dict, Any, List
 from fastapi import HTTPException
 
 from .auth import get_user_id_from_bearer
-from .ig_supabase import sb_get_client_id_for_user, sb_get_client_memberships, sb_get_connection_for_client
+from .ig_supabase import (
+    sb_get_client_for_public_request,
+    sb_get_client_id_for_user,
+    sb_get_client_memberships,
+    sb_get_connection_for_client,
+)
 from .single_tenant import get_known_single_tenant_client_ids
 
 
@@ -51,11 +56,44 @@ async def resolve_client_id(client_id: Optional[str], authorization: Optional[st
     Resolve tenant do request usando somente client_id explícito + membership.
     Sem fallback de DEFAULT_CLIENT_ID nem default por membership única.
     """
-    user_id = await require_user_id(authorization)
     requested_client_id = (client_id or "").strip()
     if not requested_client_id:
         raise HTTPException(status_code=400, detail="client_id é obrigatório na query ou no header X-Client-Id.")
     requested = requested_client_id
+
+    user_id = await get_user_id_from_bearer(authorization)
+    if not user_id:
+        if _can_bypass_single_tenant_membership_in_dev(requested_client_id):
+            dev_user_id = _local_dev_user_id()
+            print(
+                f"[tenant] dev_bypass user_id={dev_user_id} requested_client_id={requested} "
+                f"resolved_client_id={requested_client_id} source=allow_no_auth_single_tenant"
+            )
+            return requested_client_id
+
+        client_row = await sb_get_client_for_public_request(requested_client_id)
+        if not client_row:
+            print(
+                f"[tenant] denied user_id=- requested_client_id={requested} "
+                "reason=client_not_found"
+            )
+            raise HTTPException(status_code=404, detail="client_id não encontrado.")
+
+        status = str(client_row.get("status") or "active").strip().lower()
+        is_active = str(client_row.get("is_active") if client_row.get("is_active") is not None else "true").strip().lower()
+        if status in {"inactive", "disabled", "disconnected", "archived"} or is_active in {"false", "0", "no", "off"}:
+            print(
+                f"[tenant] denied user_id=- requested_client_id={requested} "
+                f"reason=client_inactive status={status or '-'} is_active={is_active or '-'}"
+            )
+            raise HTTPException(status_code=403, detail="client_id inativo.")
+
+        print(
+            f"[tenant] user_id=- requested_client_id={requested} "
+            f"resolved_client_id={requested_client_id} source=public_explicit_client"
+        )
+        return requested_client_id
+
     if _can_bypass_single_tenant_membership_in_dev(requested_client_id):
         print(
             f"[tenant] dev_bypass user_id={user_id} requested_client_id={requested} "
@@ -95,20 +133,20 @@ async def resolve_connection_id(
 ) -> Optional[str]:
     requested = (connection_id or "").strip()
     cid = (client_id or "").strip()
+    user_id = await get_user_id_from_bearer(authorization)
     if not requested:
         print(
-            f"[tenant][connection] user_id={await require_user_id(authorization)} "
+            f"[tenant][connection] user_id={user_id or '-'} "
             f"client_id={cid or '-'} requested_connection_id=- resolved_connection_id=- source=none"
         )
         return None
     if not cid:
         raise HTTPException(status_code=400, detail="client_id é obrigatório para validar connection_id.")
 
-    user_id = await require_user_id(authorization)
     row = await sb_get_connection_for_client(cid, requested)
     if not row:
         print(
-            f"[tenant][connection] denied user_id={user_id} client_id={cid} "
+            f"[tenant][connection] denied user_id={user_id or '-'} client_id={cid} "
             f"requested_connection_id={requested} reason=connection_not_in_client_scope"
         )
         raise HTTPException(
@@ -118,7 +156,7 @@ async def resolve_connection_id(
 
     resolved = str(row.get("id") or "").strip()
     print(
-        f"[tenant][connection] user_id={user_id} client_id={cid} "
+        f"[tenant][connection] user_id={user_id or '-'} client_id={cid} "
         f"requested_connection_id={requested} resolved_connection_id={resolved or '-'} source=explicit"
     )
     return resolved or None
