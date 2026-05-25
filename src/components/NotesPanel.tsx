@@ -118,7 +118,7 @@ export default function NotesPanel({
       ) : !notesAvailable ? (
         <MetaStateNotice
           title="Notas indisponíveis"
-          description="Esse ambiente ainda não expõe a tabela de notas da Curavino."
+          description="Esse ambiente ainda não expõe a tabela de notas da Roove."
           tone="unavailable"
           message={message || "As notas não estão disponíveis agora."}
           secondaryMessage="O restante da página continua utilizável."

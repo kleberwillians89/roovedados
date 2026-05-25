@@ -7,8 +7,8 @@ import logoVideo from "../assets/Mugo-3dlogo-spinning.mp4";
 
 const AUTH_DEBUG = import.meta.env.DEV && import.meta.env.VITE_AUTH_DEBUG === "true";
 
-const PRODUCT_NAME = "Curavino Metrics";
-const PANEL_NAME = "Curavino Intelligence Suite";
+const PRODUCT_NAME = "Roove Metrics";
+const PANEL_NAME = "Roove Intelligence Suite";
 
 function maskEmail(value: string | null | undefined): string {
   const email = String(value || "").trim();
@@ -143,7 +143,7 @@ export default function Login({
         userId: data.session?.user?.id || null,
       });
 
-      setInfo("Login realizado com sucesso. Carregando o painel da Curavino...");
+      setInfo("Login realizado com sucesso. Carregando o painel da Roove...");
       await onPasswordLoginSuccess?.(data.session ?? null);
     } catch (error: unknown) {
       const message = withEmailHint(toErrorMessage(error));
@@ -165,14 +165,14 @@ export default function Login({
   function handleLocalLogin() {
     enableLocalAuth();
     setErr(null);
-    setInfo("Modo local ativo. Abrindo o painel da Curavino...");
+    setInfo("Modo local ativo. Abrindo o painel da Roove...");
     onLocalLogin?.();
   }
 
   return (
     <div className="loginPage">
       <div className="loginShell">
-        <section className="loginBrandPanel" aria-label="Apresentacao da marca Curavino">
+        <section className="loginBrandPanel" aria-label="Apresentacao da marca Roove">
           <div className="loginBrandTopLogo">
             <video
               className="loginTopLogo"
@@ -191,7 +191,7 @@ export default function Login({
             <div className="loginBrandEyebrow">{PANEL_NAME}</div>
             <h1>{PRODUCT_NAME}</h1>
             <p className="loginBrandLead">
-              Painel analítico da Curavino para leitura de performance, mídia e operação.
+              Painel analítico da Roove para leitura de performance, mídia e operação.
             </p>
           </div>
 
@@ -206,7 +206,7 @@ export default function Login({
             
             <h2 className="loginTitle">Entrar no workspace</h2>
             <p className="loginSubtitle">
-              Use seu acesso enviado pela Curavino para abrir o painel privado.
+              Use seu acesso enviado pela Roove para abrir o painel privado.
             </p>
 
             {visibleError ? <div className="loginError">{visibleError}</div> : null}

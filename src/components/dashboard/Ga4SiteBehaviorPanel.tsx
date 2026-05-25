@@ -151,7 +151,7 @@ export default function Ga4SiteBehaviorPanel({
         <div>
           <div className="h1">Comportamento GA4</div>
           <div className="p">
-            Leitura executiva do GA4 para entender navegação, intenção de compra e sinais de engajamento no site da Curavino.
+            Leitura executiva do GA4 para entender navegação, intenção de compra e sinais de engajamento no site da Roove.
           </div>
         </div>
         <div className="dashboardSectionMeta">

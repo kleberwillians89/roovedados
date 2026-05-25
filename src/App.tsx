@@ -6,13 +6,13 @@ import {
   isLocalAuthEnabled,
   supabase,
 } from "./app/supabase";
-import { listCuravinoConnections } from "./app/api";
+import { listRooveConnections } from "./app/api";
 import {
   getCurrentAppRoute,
   navigateToAppRoute,
   type AppRoute,
 } from "./app/routes";
-import { ROOVE_APP_NAME } from "./app/curavino";
+import { ROOVE_APP_NAME } from "./app/roove";
 import Login from "./pages/Login";
 import Onboarding from "./pages/Onboarding";
 import Dashboard from "./pages/Dashboard";
@@ -91,7 +91,7 @@ function clearSetupUrlParams() {
 function toErrorMessage(error: unknown): string {
   if (error instanceof Error && error.message) return error.message;
   if (typeof error === "string" && error.trim()) return error;
-  return "Erro ao carregar a configuracao da Curavino.";
+  return "Erro ao carregar a configuracao da Roove.";
 }
 
 function AppLoading() {
@@ -155,7 +155,7 @@ export default function App() {
 
       try {
         const setupRequestedFromUrl = hasSetupSignalInUrl();
-        const connectionsRes = await listCuravinoConnections();
+        const connectionsRes = await listRooveConnections();
         const connections = connectionsRes.connections || [];
         const hasActiveOrganicConnection = connections.some(isOrganicConnection);
 
@@ -172,7 +172,7 @@ export default function App() {
         if (!hasActiveOrganicConnection) {
           authDebug("route.decision", {
             target: "dashboard",
-            reason: "authenticated_without_active_curavino_connection",
+            reason: "authenticated_without_active_roove_connection",
             connectionsCount: connections.length,
           });
           setView("dashboard");
@@ -181,7 +181,7 @@ export default function App() {
 
         authDebug("route.decision", {
           target: "dashboard",
-            reason: "authenticated_with_active_curavino_connection",
+            reason: "authenticated_with_active_roove_connection",
           connectionsCount: connections.length,
         });
         setView("dashboard");

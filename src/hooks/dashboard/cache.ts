@@ -4,7 +4,7 @@ type CacheEntry<T> = {
 };
 
 const DASH_CACHE = new Map<string, CacheEntry<unknown>>();
-const DASH_CACHE_PREFIX = "curavino-dashboard-cache:";
+const DASH_CACHE_PREFIX = "roove-dashboard-cache:";
 
 function storageKey(key: string): string {
   return `${DASH_CACHE_PREFIX}${key}`;

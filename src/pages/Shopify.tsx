@@ -11,7 +11,7 @@ import ShopifyTopProductsCard from "../components/shopify/ShopifyTopProductsCard
 import ShopifyWebhookStatusCard from "../components/shopify/ShopifyWebhookStatusCard";
 import { usePeriod } from "../app/PeriodContext";
 import { getShopifyCustomers, getShopifyReport } from "../app/api";
-import { ROOVE_APP_NAME, ROOVE_CLIENT_NAME } from "../app/curavino";
+import { ROOVE_APP_NAME, ROOVE_CLIENT_NAME } from "../app/roove";
 import {
   formatShopifyCompactNumber,
   formatShopifyCurrency,
@@ -360,7 +360,7 @@ export default function Shopify({ onLogout, onOpenDashboard, onOpenGoogleReport 
 
   return (
     <Shell
-      themeClass="theme-curavino"
+      themeClass="theme-roove"
       title={ROOVE_APP_NAME}
       subtitle="Relatório executivo da operação Shopify"
       right={
@@ -386,7 +386,7 @@ export default function Shopify({ onLogout, onOpenDashboard, onOpenGoogleReport 
             <h1 className="shopifyPageTitle">Dados da Shopify</h1>
             <p className="shopifyPageSubtitle">Visão da operação da loja da {ROOVE_CLIENT_NAME}.</p>
             <div className="shopifyHeroMeta">
-              <span className="pill">{report?.shop_domain || "shopify.curavino"}</span>
+              <span className="pill">{report?.shop_domain || "shopify.roove"}</span>
               <span className="shopifyHeroTimestamp">
                 Última leitura: {formatShopifyDateTime(report?.technical.last_received_at)}
               </span>
@@ -541,7 +541,7 @@ export default function Shopify({ onLogout, onOpenDashboard, onOpenGoogleReport 
             <section className="shopifySection" id="shopify-customers">
               <ShopifySectionHeader
                 eyebrow="Clientes"
-                title="Quem mais compra na Curavino"
+                title="Quem mais compra na Roove"
                 description="Visão comercial da base Shopify para identificar os melhores compradores, recorrência e profundidade de compra."
                 action={
                   <div className="shopifySectionStatus">

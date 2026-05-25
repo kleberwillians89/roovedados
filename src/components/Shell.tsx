@@ -37,10 +37,10 @@ export default function Shell({
           <div className="brand">
             <div className={`brandLogoWrap ${logoSrc ? "" : "brandLogoBadge"}`.trim()}>
               {logoSrc ? (
-                <img className="brandLogoImg" src={logoSrc} alt={logoAlt || "Curavino"} />
+                <img className="brandLogoImg" src={logoSrc} alt={logoAlt || "Roove"} />
               ) : (
-                <span className="brandLogoText" aria-label={logoAlt || "Curavino"}>
-                  Curavino
+                <span className="brandLogoText" aria-label={logoAlt || "Roove"}>
+                  Roove
                 </span>
               )}
             </div>

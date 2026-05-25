@@ -31,9 +31,9 @@ import type {
 import type { Period } from "./PeriodContext";
 import { getSupabaseBootstrapError, isLocalAuthEnabled, supabase } from "./supabase";
 import {
-  getCuravinoClientConfigurationWarning,
-  getCuravinoClientId,
-} from "./curavino";
+  getRooveClientConfigurationWarning,
+  getRooveClientId,
+} from "./roove";
 import { getSelectedPeriodRange } from "./periodRange";
 
 const rawApiBase = String(import.meta.env.VITE_API_BASE || "").trim();
@@ -143,7 +143,7 @@ function buildPeriodParams(input: number | PeriodQueryInput | undefined, default
 }
 
 function pathWithPeriod(path: string, input: number | PeriodQueryInput | undefined, defaultDays: number): string {
-  return pathWithClientId(`${path}?${buildPeriodParams(input, defaultDays)}`, getCuravinoClientId());
+  return pathWithClientId(`${path}?${buildPeriodParams(input, defaultDays)}`, getRooveClientId());
 }
 
 function pathWithPeriodAndExtras(
@@ -158,7 +158,7 @@ function pathWithPeriodAndExtras(
     if (typeof value === "string" && !value.trim()) continue;
     params.set(key, String(value));
   }
-  if (!params.has("client_id")) params.set("client_id", getCuravinoClientId());
+  if (!params.has("client_id")) params.set("client_id", getRooveClientId());
   return `${path}?${params.toString()}`;
 }
 
@@ -212,10 +212,10 @@ async function http<T>(path: string, init: RequestInit = {}): Promise<T> {
   }
 
   const headers = toHeaders(init.headers);
-  const clientId = getCuravinoClientId();
+  const clientId = getRooveClientId();
   if (!clientId) {
     throw new Error(
-      getCuravinoClientConfigurationWarning() ||
+      getRooveClientConfigurationWarning() ||
         "VITE_DEFAULT_CLIENT_ID nao foi definido."
     );
   }
@@ -233,7 +233,7 @@ async function http<T>(path: string, init: RequestInit = {}): Promise<T> {
     if (error instanceof Error && error.name === "AbortError") {
       throw error;
     }
-    const warning = getCuravinoClientConfigurationWarning();
+    const warning = getRooveClientConfigurationWarning();
     throw new Error(
       [warning, "API indisponível no momento. Verifique se o backend está rodando."]
         .filter(Boolean)
@@ -950,49 +950,49 @@ function normalizeGa4Report(raw: unknown): Ga4ReportResponse {
   };
 }
 
-function curavinoClientPath(path: string): string {
+function rooveClientPath(path: string): string {
   const suffix = path.startsWith("/") ? path : `/${path}`;
-  return `/api/clients/${encodeURIComponent(getCuravinoClientId())}${suffix}`;
+  return `/api/clients/${encodeURIComponent(getRooveClientId())}${suffix}`;
 }
 
-export async function connectCuravinoMeta(
+export async function connectRooveMeta(
   payload: { access_token: string; expires_at?: string | null; ig_user_id?: string | null }
 ): Promise<JsonRecord> {
-  return http<JsonRecord>(curavinoClientPath("/connect_meta"), {
+  return http<JsonRecord>(rooveClientPath("/connect_meta"), {
     method: "POST",
     body: JSON.stringify(payload),
   });
 }
 
-export async function startCuravinoMetaOAuth(): Promise<MetaOauthStartResponse> {
+export async function startRooveMetaOAuth(): Promise<MetaOauthStartResponse> {
   return http<MetaOauthStartResponse>(
-    `/api/oauth/meta/start?client_id=${encodeURIComponent(getCuravinoClientId())}`
+    `/api/oauth/meta/start?client_id=${encodeURIComponent(getRooveClientId())}`
   );
 }
 
-export async function discoverCuravinoMetaAssets(
+export async function discoverRooveMetaAssets(
   handoff: string
 ): Promise<MetaDiscoverAssetsResponse> {
   return http<MetaDiscoverAssetsResponse>(
-    `/api/oauth/meta/discover-assets?client_id=${encodeURIComponent(getCuravinoClientId())}&handoff=${encodeURIComponent(handoff)}`
+    `/api/oauth/meta/discover-assets?client_id=${encodeURIComponent(getRooveClientId())}&handoff=${encodeURIComponent(handoff)}`
   );
 }
 
-export async function linkCuravinoAssets(
+export async function linkRooveAssets(
   payload: { handoff: string; instagram_ig_user_ids: string[]; ad_account_ids: string[] }
 ): Promise<JsonRecord> {
-  return http<JsonRecord>(curavinoClientPath("/connections/link-assets"), {
+  return http<JsonRecord>(rooveClientPath("/connections/link-assets"), {
     method: "POST",
     body: JSON.stringify(payload),
   });
 }
 
-export async function listCuravinoConnections(): Promise<ClientConnectionsResponse> {
-  return http<ClientConnectionsResponse>(curavinoClientPath("/connections"));
+export async function listRooveConnections(): Promise<ClientConnectionsResponse> {
+  return http<ClientConnectionsResponse>(rooveClientPath("/connections"));
 }
 
-export async function disconnectCuravinoConnection(connectionId: string): Promise<JsonRecord> {
-  return http<JsonRecord>(curavinoClientPath(`/connections/${encodeURIComponent(connectionId)}`), {
+export async function disconnectRooveConnection(connectionId: string): Promise<JsonRecord> {
+  return http<JsonRecord>(rooveClientPath(`/connections/${encodeURIComponent(connectionId)}`), {
     method: "DELETE",
   });
 }
@@ -1177,7 +1177,7 @@ export async function syncFbits(
   const start = asString(period?.start).trim();
   const end = asString(period?.end).trim();
   const days = positiveInt(period?.days, 30);
-  const clientId = asString(options?.clientId).trim() || getCuravinoClientId();
+  const clientId = asString(options?.clientId).trim() || getRooveClientId();
   if (start) params.set("start", start);
   if (end) params.set("end", end);
   if (!start || !end) params.set("days", String(days));
@@ -1248,7 +1248,7 @@ export async function syncGa4(
   const end = String(period?.end || "").trim();
   const days = positiveInt(period?.days, 30);
   const clientId = asString(options?.clientId).trim();
-  const resolvedClientId = clientId || getCuravinoClientId();
+  const resolvedClientId = clientId || getRooveClientId();
   if (start) params.set("start", start);
   if (end) params.set("end", end);
   if (!start || !end) params.set("days", String(days));
@@ -1262,7 +1262,7 @@ export async function syncAds(
   period?: PeriodQueryInput,
   options?: { connectionId?: string | null; clientId?: string | null }
 ): Promise<JsonRecord> {
-  const resolvedClientId = String(options?.clientId || getCuravinoClientId()).trim();
+  const resolvedClientId = String(options?.clientId || getRooveClientId()).trim();
   const payload: JsonRecord = {};
   const start = String(period?.start || "").trim();
   const end = String(period?.end || "").trim();

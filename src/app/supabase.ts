@@ -2,7 +2,7 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 const url = String(import.meta.env.VITE_SUPABASE_URL || "").trim();
 const anon = String(import.meta.env.VITE_SUPABASE_ANON_KEY || "").trim();
-const LOCAL_AUTH_STORAGE_KEY = "curavino_metrics_local_auth";
+const LOCAL_AUTH_STORAGE_KEY = "roove_metrics_local_auth";
 
 function buildBootstrapError(): string | null {
   const missing: string[] = [];
@@ -11,7 +11,7 @@ function buildBootstrapError(): string | null {
   if (!missing.length) return null;
   return [
     `Configuracao ausente no frontend: ${missing.join(", ")}.`,
-    "Defina as variaveis Vite do Supabase para liberar login e sessao da Curavino.",
+    "Defina as variaveis Vite do Supabase para liberar login e sessao da Roove.",
   ].join(" ");
 }
 
@@ -55,7 +55,7 @@ export function enableLocalAuth(): void {
   if (!isLocalAuthAvailable()) return;
   try {
     window.localStorage.setItem(LOCAL_AUTH_STORAGE_KEY, "1");
-    window.dispatchEvent(new Event("curavino-local-auth-change"));
+    window.dispatchEvent(new Event("roove-local-auth-change"));
   } catch {
     // no-op
   }
@@ -64,7 +64,7 @@ export function enableLocalAuth(): void {
 export function disableLocalAuth(): void {
   try {
     window.localStorage.removeItem(LOCAL_AUTH_STORAGE_KEY);
-    window.dispatchEvent(new Event("curavino-local-auth-change"));
+    window.dispatchEvent(new Event("roove-local-auth-change"));
   } catch {
     // no-op
   }

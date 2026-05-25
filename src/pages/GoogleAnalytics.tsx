@@ -21,8 +21,8 @@ import type {
 import {
   GA4_CLIENT_OPTIONS,
   ACTIVE_CLIENT_ID,
-  getCuravinoClientConfigurationWarning,
-} from "../app/curavino";
+  getRooveClientConfigurationWarning,
+} from "../app/roove";
 import { CHART_COLORS, formatDatePtBr, formatFullNumber } from "../components/dashboard/chartTheme";
 
 import "../styles/dashboard.css";
@@ -509,7 +509,7 @@ export default function GoogleAnalytics({
 
   const hasData = hasGa4Data(ga4Report);
   const combinedError = refreshError || ga4Error;
-  const configWarning = activeGa4ClientId === ACTIVE_CLIENT_ID ? getCuravinoClientConfigurationWarning() : null;
+  const configWarning = activeGa4ClientId === ACTIVE_CLIENT_ID ? getRooveClientConfigurationWarning() : null;
   const lastSyncedLabel =
     formatUpdatedAtLabel(ga4Report?.meta.last_synced_at) || formatUpdatedAtLabel(ga4UpdatedAt);
   const pagePeriodLabel = `${formatDatePtBr(selectedRange.start)} - ${formatDatePtBr(selectedRange.end)}`;
@@ -767,7 +767,7 @@ export default function GoogleAnalytics({
 
   return (
     <Shell
-      themeClass="theme-curavino"
+      themeClass="theme-roove"
       title=""
       right={
         <DashboardHeader

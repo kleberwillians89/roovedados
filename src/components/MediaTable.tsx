@@ -152,7 +152,7 @@ function MediaTable({ media }: { media: IgMediaItem[] }) {
                   <span>{date}</span>
                 </div>
                 <div className="organicMediaCaption">
-                  {caption || "Conteúdo orgânico da Curavino"}
+                  {caption || "Conteúdo orgânico da Roove"}
                 </div>
                 <div className="organicMediaStats">
                   <span>Alcance <strong>{num(ins["reach"] as number | undefined)}</strong></span>

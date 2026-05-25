@@ -40,8 +40,8 @@
   --shadow2: 0 12px 34px rgba(10,13,16,.10);
 }
 
-/* Tema Curavino */
-.appShell.theme-curavino,
+/* Tema Roove */
+.appShell.theme-roove,
 .appShell.theme-roove{
   --bg: #f5f1ec;
   --ink: #1d1b1a;
@@ -56,7 +56,7 @@
   --shadow2: 0 14px 36px rgba(38,27,27,.12);
 }
 
-.appShell.theme-curavino,
+.appShell.theme-roove,
 .appShell.theme-roove{
   background:
     radial-gradient(1050px 380px at 13% -10%, rgba(123,45,59,.16), transparent 64%),
@@ -65,7 +65,7 @@
     var(--bg);
 }
 
-.appShell.theme-curavino .topbar,
+.appShell.theme-roove .topbar,
 .appShell.theme-roove .topbar{
   padding: 12px var(--shell-padding-x) 0;
   border-bottom-color: transparent;
@@ -73,7 +73,7 @@
   backdrop-filter: none;
 }
 
-.appShell.theme-curavino .topbarInner,
+.appShell.theme-roove .topbarInner,
 .appShell.theme-roove .topbarInner{
   border: 1px solid rgba(91,31,42,.13);
   border-radius: 22px;
@@ -83,7 +83,7 @@
   box-shadow: 0 20px 44px rgba(48,31,33,.09);
 }
 
-.appShell.theme-curavino .brandLogoWrap,
+.appShell.theme-roove .brandLogoWrap,
 .appShell.theme-roove .brandLogoWrap{
   border-color: rgba(91,31,42,.2);
   background: linear-gradient(135deg, rgba(255,255,255,.98), rgba(251,248,244,.92));
@@ -93,7 +93,7 @@
   padding: 4px 10px;
 }
 
-.appShell.theme-curavino .brandLogoImg,
+.appShell.theme-roove .brandLogoImg,
 .appShell.theme-roove .brandLogoImg{
   width: 100%;
   height: 100%;
@@ -101,7 +101,7 @@
   object-position: center;
 }
 
-.appShell.theme-curavino .brandLogoWrap.brandLogoBadge,
+.appShell.theme-roove .brandLogoWrap.brandLogoBadge,
 .appShell.theme-roove .brandLogoWrap.brandLogoBadge{
   width: auto;
   height: 36px;
@@ -110,72 +110,72 @@
   border-radius: 999px;
 }
 
-.appShell.theme-curavino .btnPrimary,
+.appShell.theme-roove .btnPrimary,
 .appShell.theme-roove .btnPrimary{
   background: linear-gradient(135deg, #1d1b1a, #2b2021);
   border-color: rgba(91,31,42,.28);
 }
 
-.appShell.theme-curavino .btnPrimary:hover,
+.appShell.theme-roove .btnPrimary:hover,
 .appShell.theme-roove .btnPrimary:hover{
   background: linear-gradient(135deg, #5b1f2a, #6e2230);
 }
 
-.appShell.theme-curavino .btnGold,
+.appShell.theme-roove .btnGold,
 .appShell.theme-roove .btnGold{
   color: #fff;
   background: linear-gradient(135deg, #6e2230, #8b3a4a);
   border-color: rgba(91,31,42,.24);
 }
 
-.appShell.theme-curavino .pill,
+.appShell.theme-roove .pill,
 .appShell.theme-roove .pill{
   color: #5b1f2a;
   background: linear-gradient(180deg, rgba(123,45,59,.1), rgba(255,255,255,.9));
   border-color: rgba(91,31,42,.18);
 }
 
-.appShell.theme-curavino .card,
+.appShell.theme-roove .card,
 .appShell.theme-roove .card{
   border-color: rgba(91,31,42,.11);
   box-shadow: 0 16px 42px rgba(48,31,33,.08);
 }
 
-.appShell.theme-curavino .panelTitle,
-.appShell.theme-curavino .brandTitle,
-.appShell.theme-curavino .cardValue,
+.appShell.theme-roove .panelTitle,
+.appShell.theme-roove .brandTitle,
+.appShell.theme-roove .cardValue,
 .appShell.theme-roove .panelTitle,
 .appShell.theme-roove .brandTitle,
 .appShell.theme-roove .cardValue{
   color: #1a1718;
 }
 
-.appShell.theme-curavino .tab.active,
+.appShell.theme-roove .tab.active,
 .appShell.theme-roove .tab.active{
   background: #5b1f2a;
   color: #fbf8f4;
   border-color: #5b1f2a;
 }
 
-.appShell.theme-curavino .brandLogoText,
+.appShell.theme-roove .brandLogoText,
 .appShell.theme-roove .brandLogoText{
   color: #5b1f2a;
 }
 
-.appShell.theme-curavino .btnGhost,
+.appShell.theme-roove .btnGhost,
 .appShell.theme-roove .btnGhost{
   border-color: rgba(91,31,42,.2);
   background: rgba(255,255,255,.42);
   color: #5b1f2a;
 }
 
-.appShell.theme-curavino .btnGhost:hover,
+.appShell.theme-roove .btnGhost:hover,
 .appShell.theme-roove .btnGhost:hover{
   background: rgba(91,31,42,.08);
   box-shadow: 0 12px 26px rgba(55,35,37,.1);
 }
 
-.appShell.theme-curavino .pillSoft,
+.appShell.theme-roove .pillSoft,
 .appShell.theme-roove .pillSoft{
   background: rgba(123,45,59,.08);
   border-color: rgba(91,31,42,.16);

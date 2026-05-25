@@ -31,7 +31,7 @@ import {
   listNotes,
   createNote,
   updateNote,
-  listCuravinoConnections,
+  listRooveConnections,
   syncAds,
 } from "../app/api";
 
@@ -62,8 +62,8 @@ import { usePeriod } from "../app/PeriodContext";
 import { formatSelectedPeriodLabel, getSelectedPeriodRange } from "../app/periodRange";
 import {
   ACTIVE_CLIENT_ID,
-  getCuravinoClientConfigurationWarning,
-} from "../app/curavino";
+  getRooveClientConfigurationWarning,
+} from "../app/roove";
 
 import "../styles/dashboard.css";
 
@@ -1398,7 +1398,7 @@ export default function Dashboard({
       };
     }
 
-    listCuravinoConnections()
+    listRooveConnections()
       .then((response) => {
         if (!alive) return;
         const nextConnections = arrayOrEmpty<MetaConnection>(response.connections);
@@ -1434,7 +1434,7 @@ export default function Dashboard({
 
   async function onRefresh() {
     if (!activeClientId) {
-      setErr("Client_id da Curavino não configurado para atualização.");
+      setErr("Client_id da Roove não configurado para atualização.");
       return;
     }
     setErr(null);
@@ -1504,8 +1504,8 @@ export default function Dashboard({
 
   const hasDash = !!dash?.ok;
 
-  const configWarning = getCuravinoClientConfigurationWarning();
-  const themeClass = "theme-curavino";
+  const configWarning = getRooveClientConfigurationWarning();
+  const themeClass = "theme-roove";
 
   const periodTotals = dash?.period_totals;
   const daily = dash?.daily || [];
@@ -1581,7 +1581,7 @@ export default function Dashboard({
           ? "Ads sem gasto"
           : "Aguardando atualização";
   const paidEmptyMessage = !hasPaidConnection
-    ? "Sem conexão de Ads ativa para a Curavino."
+    ? "Sem conexão de Ads ativa para a Roove."
     : paidConnectionStatus === "error" || paidConnectionStatus === "needs_reauth"
       ? "A conexão de Ads precisa de atenção antes da próxima sincronização."
       : loadingPaid
