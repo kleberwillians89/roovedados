@@ -266,6 +266,22 @@ async def _select_shopify_refunds(
         ]
 
 
+async def _latest_shopify_sync_status(*, client_id: str) -> Dict[str, Any]:
+    try:
+        rows = await sb_select(
+            "shopify_sync_status",
+            select="client_id,shop_domain,last_sync_at,last_sync_status,orders_found,orders_persisted,updated_at",
+            filters={"client_id": f"eq.{client_id}"},
+            order="last_sync_at.desc",
+            limit=1,
+        )
+        return rows[0] if rows else {}
+    except httpx.HTTPStatusError as exc:
+        if exc.response is None or exc.response.status_code != 404:
+            raise
+        return {}
+
+
 def _build_daily_trends(period: ShopifyReportPeriod, orders: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
     buckets: Dict[str, Dict[str, Any]] = {}
     for offset in range(period.days):
@@ -471,6 +487,7 @@ async def build_shopify_report(
     refunded_amount = sum(_safe_float(refund.get("total_refunded")) for refund in refunds)
 
     recent_webhooks = await list_recent_shopify_webhooks(client_id=client_id, limit=8, include_payload=False)
+    latest_sync = await _latest_shopify_sync_status(client_id=client_id)
     processed_webhooks = [item for item in recent_webhooks if _safe_str(item.get("status")).lower() == "processed"]
     error_webhooks = [item for item in recent_webhooks if _safe_str(item.get("status")).lower() == "error"]
 
@@ -479,6 +496,8 @@ async def build_shopify_report(
         shop_domain = _normalize_shop_domain(orders[0].get("shop_domain"))
     elif recent_webhooks:
         shop_domain = _normalize_shop_domain(recent_webhooks[0].get("shop_domain"))
+    elif latest_sync:
+        shop_domain = _normalize_shop_domain(latest_sync.get("shop_domain"))
 
     return {
         "ok": True,
@@ -505,6 +524,10 @@ async def build_shopify_report(
         "recent_orders": _build_recent_orders(orders, items_by_order, customers_by_id),
         "top_products": _aggregate_top_products(order_items),
         "technical": {
+            "last_sync_at": latest_sync.get("last_sync_at") or latest_sync.get("updated_at"),
+            "last_sync_status": latest_sync.get("last_sync_status"),
+            "sync_orders_found": _safe_int(latest_sync.get("orders_found")),
+            "sync_orders_persisted": _safe_int(latest_sync.get("orders_persisted")),
             "last_success_at": processed_webhooks[0]["processed_at"] if processed_webhooks else None,
             "last_received_at": recent_webhooks[0]["received_at"] if recent_webhooks else None,
             "processed_count": len(processed_webhooks),

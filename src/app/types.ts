@@ -103,6 +103,10 @@ export type ShopifyWebhookEvent = {
 };
 
 export type ShopifyTechnicalSummary = {
+  last_sync_at?: string | null;
+  last_sync_status?: string | null;
+  sync_orders_found?: number;
+  sync_orders_persisted?: number;
   last_success_at?: string | null;
   last_received_at?: string | null;
   processed_count: number;

@@ -453,6 +453,10 @@ function normalizeShopifyReport(raw: unknown): ShopifyReportResponse {
       };
     }),
     technical: {
+      last_sync_at: asString(technical.last_sync_at) || null,
+      last_sync_status: asString(technical.last_sync_status) || null,
+      sync_orders_found: asNumber(technical.sync_orders_found),
+      sync_orders_persisted: asNumber(technical.sync_orders_persisted),
       last_success_at: asString(technical.last_success_at) || null,
       last_received_at: asString(technical.last_received_at) || null,
       processed_count: asNumber(technical.processed_count),
@@ -1122,10 +1126,10 @@ export async function getShopifyCustomers(
 
 export async function syncShopify(
   period: number | PeriodQueryInput = 30
-): Promise<{ ok: boolean; orders_found?: number; orders_persisted?: number }> {
+): Promise<{ ok: boolean; last_sync_at?: string; orders_found?: number; orders_persisted?: number }> {
   const fallbackDays =
     typeof period === "number" ? positiveInt(period, 30) : positiveInt(period.days, 30);
-  return http<{ ok: boolean; orders_found?: number; orders_persisted?: number }>(
+  return http<{ ok: boolean; last_sync_at?: string; orders_found?: number; orders_persisted?: number }>(
     pathWithPeriod("/api/shopify/sync", period, fallbackDays),
     { method: "POST" }
   );

@@ -215,9 +215,17 @@ export default function Shopify({ onLogout, onOpenDashboard, onOpenGoogleReport 
         end: period.end,
         days: periodDays,
       };
-      await syncShopify(currentPeriod);
+      const syncResult = await syncShopify(currentPeriod);
       await Promise.all([
-        getShopifyReport(currentPeriod).then(setReport),
+        getShopifyReport(currentPeriod).then((nextReport) => {
+          setReport({
+            ...nextReport,
+            technical: {
+              ...nextReport.technical,
+              last_sync_at: nextReport.technical.last_sync_at || syncResult.last_sync_at || null,
+            },
+          });
+        }),
         getShopifyCustomers(currentPeriod).then(setCustomerData),
       ]);
     } catch (requestError: unknown) {
@@ -417,7 +425,7 @@ export default function Shopify({ onLogout, onOpenDashboard, onOpenGoogleReport 
             <div className="shopifyHeroMeta">
               <span className="pill">{report?.shop_domain || "shopify.roove"}</span>
               <span className="shopifyHeroTimestamp">
-                Última leitura: {formatShopifyDateTime(report?.technical.last_received_at)}
+                Última leitura: {formatShopifyDateTime(report?.technical.last_sync_at || report?.technical.last_received_at)}
               </span>
             </div>
             <div className="shopifyQuickNav">

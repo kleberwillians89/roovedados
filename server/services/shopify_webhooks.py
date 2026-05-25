@@ -799,6 +799,7 @@ async def sync_shopify_orders_for_period(
     persisted_refunds = 0
     page_count = 0
     page_info: Optional[str] = None
+    sync_started_at = _iso_now()
 
     access_token, access_token_env, token_source = await _shopify_admin_access_token(resolved_shop_domain)
 
@@ -877,10 +878,39 @@ async def sync_shopify_orders_for_period(
         f"orders_persisted={persisted_orders} items_persisted={persisted_items} "
         f"customers_persisted={persisted_customers} refunds_persisted={persisted_refunds} pages={page_count}"
     )
+    try:
+        await sb_upsert(
+            "shopify_sync_status",
+            [
+                {
+                    "client_id": client_id,
+                    "shop_domain": resolved_shop_domain,
+                    "last_sync_at": sync_started_at,
+                    "last_sync_status": "success",
+                    "orders_found": found_orders,
+                    "orders_persisted": persisted_orders,
+                    "items_persisted": persisted_items,
+                    "customers_persisted": persisted_customers,
+                    "refunds_persisted": persisted_refunds,
+                    "pages": page_count,
+                    "updated_at": _iso_now(),
+                }
+            ],
+            on_conflict="client_id,shop_domain",
+        )
+    except httpx.HTTPStatusError as exc:
+        if exc.response is None or exc.response.status_code != 404:
+            raise
+        print(
+            "[shopify][sync][status_warning] "
+            f"client_id={client_id} shop_domain={resolved_shop_domain} "
+            "table=shopify_sync_status reason=table_missing"
+        )
     return {
         "ok": True,
         "client_id": client_id,
         "shop_domain": resolved_shop_domain,
+        "last_sync_at": sync_started_at,
         "period": {
             "start": start.isoformat(),
             "end": end.isoformat(),
